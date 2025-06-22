@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
 from models import db, Book
-from routes.auth import admin_required
+# from routes.auth import admin_required
 
 books_bp = Blueprint('books', __name__,url_prefix='/api/books')
 
@@ -23,7 +23,7 @@ def get_books():
     return jsonify([book.to_dict() for book in books])
 
 @books_bp.route('', methods=['POST'])
-@admin_required
+# @admin_required
 def add_book():
     # 添加图书（管理员）
     data = request.get_json()
@@ -43,7 +43,7 @@ def add_book():
     return jsonify(book.to_dict()), 201
 
 @books_bp.route('/<int:id>', methods=['PUT'])
-@admin_required
+# @admin_required
 def update_book(id):
     # 更新图书（管理员）
     book = Book.query.get_or_404(id)
@@ -57,7 +57,7 @@ def update_book(id):
     return jsonify(book.to_dict())
 
 @books_bp.route('/<int:id>', methods=['DELETE'])
-@admin_required
+# @admin_required
 def delete_book(id):
     # 删除图书（管理员）
     book = Book.query.get_or_404(id)

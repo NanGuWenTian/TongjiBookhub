@@ -1,6 +1,7 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
-import SearchPage from '../views/SearchPage.vue'
+// import SearchPage from '../views/SearchPage.vue'
+import indexPage from '../views/indexPage.vue'
 import BookDetailedPage from '@/views/BookDetailedPage.vue'
 
 Vue.use(VueRouter)
@@ -8,8 +9,8 @@ Vue.use(VueRouter)
 const routes = [
   {
     path: '/',
-    name: 'SearchPage',
-    component: SearchPage
+    name: 'IndexPage',
+    component: indexPage
   },
   {
     path: '/book/:id',
