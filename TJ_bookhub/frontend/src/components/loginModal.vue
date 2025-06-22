@@ -5,8 +5,8 @@
       <h2>登录到 TJBookhub</h2>
       <form @submit.prevent="handleLogin">
         <div class="form-group">
-          <label for="email">邮箱</label>
-          <input type="email" id="email" v-model="email" required>
+          <label for="account">用户名/邮箱</label>
+          <input type="account" id="account" v-model="account" required>
         </div>
         <div class="form-group">
           <label for="password">密码</label>
@@ -14,20 +14,37 @@
         </div>
         <button type="submit" class="submit-button">登录</button>
       </form>
-      <p class="switch-text">还没有账号？<a href="#" @click.prevent="$emit('switchToRegister')">立即注册</a></p>
+      <p class="switch-text">还没有账号？<a href="#" @click.prevent="$emit('switch-to-register')">立即注册</a></p>
     </div>
   </div>
 </template>
 
 <script setup>
 import { ref } from 'vue';
+import { login} from '../api/auth';
+import { useRouter } from 'vue-router';
 
-const email = ref('');
+
+const account = ref('');
 const password = ref('');
+const router = useRouter();
 
-const handleLogin = () => {
-  // 登录逻辑
-  console.log('登录:', email.value, password.value);
+const handleLogin = async () => {
+  if (!account.value || !password.value) {
+    alert('请填写账号和密码');
+    return;
+  }
+
+  const result = await login({ account: account.value, password: password.value });
+  if (result.code !== 200) {
+    alert(result.msg || '登录失败');
+    return;
+  }
+  
+  alert('登录成功！');
+  localStorage.setItem('access_token', result.data.access_token)
+  localStorage.setItem('refresh_token', result.data.refresh_token)
+  router.push('/login');
 };
 </script>
 
@@ -83,7 +100,7 @@ label {
 
 input {
   width: 100%;
-  padding: 0.8rem;
+  padding: 0.8rem 0em;
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 1rem;

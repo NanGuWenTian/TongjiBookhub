@@ -95,7 +95,7 @@
   </template>
   
   <script setup>
-  import { ref, onMounted, watch, defineProps } from 'vue';
+  import { ref, onMounted, watch } from 'vue';
   import * as d3 from 'd3';
   import cloud from 'd3-cloud';
   

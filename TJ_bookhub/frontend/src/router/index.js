@@ -1,15 +1,18 @@
-import Vue from 'vue'
-import VueRouter from 'vue-router'
+import { createRouter, createWebHistory } from 'vue-router'
 // import SearchPage from '../views/SearchPage.vue'
+import welcomePage from '../views/welcomePage.vue'
 import indexPage from '../views/indexPage.vue'
 import BookDetailedPage from '@/views/BookDetailedPage.vue'
-
-Vue.use(VueRouter)
 
 const routes = [
   {
     path: '/',
-    name: 'IndexPage',
+    name: 'welcomePage',
+    component: welcomePage
+  },
+  {
+    path: '/index',
+    name: 'indexPage',
     component: indexPage
   },
   {
@@ -18,20 +21,19 @@ const routes = [
     component: BookDetailedPage
   },
   {
-    path:'/analysis',
-    name:'bookAnalysis',
-    component:()=>import('../views/bookAnalysis.vue')
+    path: '/analysis',
+    name: 'bookAnalysis',
+    component: () => import('../views/bookAnalysis.vue')
   },
   {
-    path:'/event',
-    name:'eventRecommend',
-    component:()=>import('../views/eventRecommend.vue')
+    path: '/event',
+    name: 'eventRecommend',
+    component: () => import('../views/eventRecommend.vue')
   }
 ]
 
-const router = new VueRouter({
-  mode: 'history',
-  base: process.env.BASE_URL,
+const router = createRouter({
+  history: createWebHistory(process.env.BASE_URL),
   routes
 })
 

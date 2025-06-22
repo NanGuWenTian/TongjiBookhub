@@ -114,8 +114,8 @@
 </template>
 
 <script setup>
-import { ref, computed, reactive, watch, emit } from 'vue';
-import { getCaptcha } from '../api/auth';
+import { ref, computed, reactive, watch } from 'vue';
+import { getCaptcha, register } from '../api/auth';
 
 
 // 表单数据
@@ -205,10 +205,6 @@ const sendCaptcha = async () => {
   }
 
   const result = await getCaptcha(form.email);
-  if (result.code === 429) {
-    alert(result.msg);
-    return;
-  }
   if (result.code !== 200) {
     alert(result.msg || '发送失败');
     return;
@@ -226,22 +222,28 @@ const sendCaptcha = async () => {
 };
 
 // 处理注册
-const handleRegister = () => {
+const handleRegister = async () => {
   if (!formValid.value) return;
   
-  console.log('注册信息:', form);
-  // 这里应该调用注册API
-  // 注册成功后根据autoLogin决定是否自动登录
-  
-  // 模拟注册成功
-  alert('注册成功!');
+  const result = await register({
+    username: form.username,
+    email: form.email,
+    password: form.password,
+    captcha: form.captcha
+  });
+
+  if (result.code !== 200) {
+    alert(result.msg || '注册失败');
+    return;
+  }
+
+  alert('注册成功');
+
   if (form.autoLogin) {
+
     // 自动登录逻辑
     console.log('自动登录中...');
   }
-  
-  // 关闭模态框
-  emit('close');
 };
 
 // 监听表单变化

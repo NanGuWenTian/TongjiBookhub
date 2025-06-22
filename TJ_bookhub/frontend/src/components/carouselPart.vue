@@ -44,7 +44,7 @@
 </template>
 
 <script setup>
-  import { ref, onMounted, defineProps, toRefs} from 'vue';
+  import { ref, onMounted, toRefs} from 'vue';
   const props = defineProps({
     events: {
       type: Array,
