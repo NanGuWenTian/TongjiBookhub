@@ -339,7 +339,7 @@ export default {
 /* 基础样式 */
 .library-container {
   font-family: 'Noto Serif SC', 'SimSun', serif;
-  max-width: 1000px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 20px;
   color: #333;

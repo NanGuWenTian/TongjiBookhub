@@ -18,7 +18,7 @@
         </div>
       </section>
       
-      <!-- 活动搜索和筛选 -->
+      <!-- 活动搜索和筛选
       <section class="event-filter">
         <div class="search-box">
           <input 
@@ -37,26 +37,35 @@
             </option>
           </select>
         </div>
-      </section>
-      
-      <!-- 所有活动列表 -->
-      <!-- <section class="all-events">
-        <div class="section-header">
-        </div>
-        <div class="event-grid">
-          <eventCard 
-            v-for="event in filteredEvents" 
-            :key="event.id" 
-            :event="event" 
-            @click="navigateToEventDetail(event.id)"
-          />
-        </div>
       </section> -->
+      
        <section class="all-events">
           <div class="section-header">
-              <!-- <h2>所有活动</h2> -->
+            <h2>活动搜索</h2>
           </div>
-          
+          <!-- 活动搜索和筛选 -->
+
+          <section class="event-filter">
+            <div class="search-box">
+              <input 
+                type="text" 
+                v-model="searchQuery" 
+                placeholder="搜索活动..." 
+                @keyup.enter="searchEvents"
+              >
+              <select v-model="selectedCategory" @change="filterEvents">
+                <option 
+                  v-for="category in eventCategories" 
+                  :key="category.id" 
+                  :value="category.id"
+                >
+                  {{ category.name }}
+                </option>
+              </select>
+        </div>
+      </section>
+
+
           <div class="event-grid">
               <eventCard 
                   v-for="event in filteredEvents" 
@@ -79,7 +88,7 @@
         </div>
         <div class="class-events-container">
           <pictureWall 
-            :items="classEvents" 
+            :items="hotedEvents" 
           />
         </div>
       </section>
@@ -116,7 +125,7 @@
   </template>
   
 <script setup>
-  import { ref, computed, onMounted } from 'vue';
+  import { ref, computed,onMounted} from 'vue';
   import axios from 'axios';
   import carouselPart from '@/components/carouselPart.vue';
   import eventCard from '@/components/eventCard.vue';
@@ -125,6 +134,8 @@
   // 特色活动数据，作为模拟，这里暂时没用
   const featuredEvents = ref([]);
   const allEvents = ref([]);
+  const hotedEvents = ref([]);
+
   const eventCategories = ref([
       { id: 0, name: '所有类别' },
       { id: 1, name: '书香雅集' },
@@ -189,6 +200,20 @@
       }
   };
 
+  // 获取热门活动
+  const getHotEvents = async () => { 
+    try{
+      const response = await axios.get('/api/events/hot_events');
+      hotedEvents.value = response.data.hot_events;
+
+      // 下面是测试信息
+      console.log('获取热门活动成功,信息如下');
+      console.log(hotedEvents.value);
+    }
+    catch(error){
+      console.error('获取热门活动失败:', error);
+    }
+  };
   //实现搜索功能
   const searchEvents = async () => {
       console.log('您已点击了提交了搜索内容');
@@ -223,13 +248,14 @@
 
   //实现页面跳转
   const navigateToEventDetail = (eventId) => {
-      console.log('您已点击了活动卡片');
+      console.log('您已点击了活动卡片-组件外部');
       console.log(eventId);
   };
 
   onMounted(() => {
-      fetchEvents();
-      getFeaturedEvents();
+    fetchEvents();
+    getFeaturedEvents();
+    getHotEvents();
   });
 </script>
   

@@ -118,6 +118,7 @@ class Event(db.Model):
     organizer = db.Column(db.String(200))  # 主办方
     theme = db.Column(db.String(200))     # 主题
     is_featured = db.Column(db.Boolean, default=False) # 是否为精选活动
+    participate_counts = db.Column(db.Integer, default=0)
 
     # 转换成字典
     def to_dict(self):
@@ -132,7 +133,8 @@ class Event(db.Model):
             'brief': self.brief,
             'organizer': self.organizer,
             'theme': self.theme,
-            'is_featured': self.is_featured
+            'is_featured': self.is_featured,
+            'participate_counts': self.participate_counts
         }
         # 处理关联的活动种类信息
         if self.category:

@@ -2,7 +2,7 @@
   <div class="carousel">
     <div class="carousel-inner" :style="{ transform: `translateX(-${currentIndex * 100}%)` }">
       <div 
-        v-for="item in events" 
+        v-for="(item) in events" 
         :key="item.id" 
         class="carousel-item"
         @click="handleClick(item.id)"
@@ -20,10 +20,16 @@
     </div>
     
     <button class="carousel-control prev" @click="prev">
-      &lt;
+       <svg t="1750576636973" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="5415" width="25" height="25">
+        <path d="M298.456371 578.74104299L298.456371 678.80714199 398.519398 678.807142 398.519398 778.864947 498.583347 778.864947 498.583347 878.923878 598.647398 878.923878 598.647398 978.983731 798.780518 978.98373099 798.780518 878.923878 698.710426 878.923878 698.710426 778.864947 598.647398 778.864947 598.647398 678.807142 498.583347 678.807142 498.583347 578.741043 398.519398 578.741043 398.519398 478.68631 498.583347 478.68631 498.583347 378.620211 598.647398 378.620211 598.647398 278.562406 698.710426 278.562406 698.710426 178.502451 798.780518 178.502451 798.780518 78.443622 598.647398 78.443622 598.647398 178.502451 498.583347 178.502451 498.583347 278.562406 398.519398 278.562406 398.519398 378.620211 298.456371 378.620211 298.456371 478.68631 198.38423 478.68631 198.38423 578.74104299Z" p-id="5416">
+        </path>
+      </svg>
     </button>
     <button class="carousel-control next" @click="next">
-      &gt;
+       <svg t="1750576683348" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="5573" width="25" height="25">
+        <path d="M725.543629 445.258957 725.543629 345.192858 625.480602 345.192858 625.480602 245.135053 525.416653 245.135053 525.416653 145.076122 425.352602 145.076122 425.352602 45.016269 225.219482 45.016269 225.219482 145.076122 325.289574 145.076122 325.289574 245.135053 425.352602 245.135053 425.352602 345.192858 525.416653 345.192858 525.416653 445.258957 625.480602 445.258957 625.480602 545.31369 525.416653 545.31369 525.416653 645.379789 425.352602 645.379789 425.352602 745.437594 325.289574 745.437594 325.289574 845.497549 225.219482 845.497549 225.219482 945.556378 425.352602 945.556378 425.352602 845.497549 525.416653 845.497549 525.416653 745.437594 625.480602 745.437594 625.480602 645.379789 725.543629 645.379789 725.543629 545.31369 825.61577 545.31369 825.61577 445.258957Z" fill="#2c2c2c" p-id="5574">
+       </path>
+      </svg>
     </button>
     
     <div class="carousel-indicators">
@@ -38,8 +44,8 @@
 </template>
 
 <script setup>
-  import { ref, onMounted, defineProps } from 'vue';
-  const { events } = defineProps({
+  import { ref, onMounted, defineProps, toRefs} from 'vue';
+  const props = defineProps({
     events: {
       type: Array,
       default: () => ([
@@ -58,21 +64,30 @@
       ])
     }
   });
-
+  const {events} = toRefs(props);
   const handleClick = (event_id) => {
-    console.log("您已点击活动卡片");
-    console.log(event_id);
+    // console.log("您已点击活动卡片");
+    // console.log("当前活动卡片id");
+    // console.log(event_id);
+    console.log("活动信息为");
+    console.log(events.value);
+
+    console.log("活动总数为");
+    console.log(events.value.length);
+    // console.log("之后会跳转到活动详情页面","活动id为",event_id)
+    console.log("您已点击活动卡片-组件内部");
+    console.log("活动id为",event_id)
   }
 
+  // 这里是活动数组中的下标
   const currentIndex = ref(0);
-  // let autoPlayInterval;
 
   const next = () => {
-    currentIndex.value = (currentIndex.value + 1) % events.length;
+    currentIndex.value = (currentIndex.value +1) % events.value.length;
   };
 
   const prev = () => {
-    currentIndex.value = (currentIndex.value - 1 + events.length) % events.length;
+    currentIndex.value = (currentIndex.value -1 + events.value.length) % events.value.length;
   };
 
   const goTo = (index) => {
@@ -85,8 +100,8 @@
   // };
 
   onMounted(() => {
-    // startAutoPlay();
-    // return () => clearInterval(autoPlayInterval);
+    console.log("组件接收到的信息是");
+    console.log(events.value);
   });
 
 </script>

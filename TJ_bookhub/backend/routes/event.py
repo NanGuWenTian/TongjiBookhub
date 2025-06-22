@@ -48,6 +48,8 @@ def get_events():
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
     is_featured = request.args.get('is_featured')
+    # 从里面读取participate_counts最大的
+    # is_hoted = request.args.get('is_hoted')
 
     if title:
         query = query.filter(Event.title.ilike(f'%{title}%'))
@@ -74,6 +76,10 @@ def get_events():
     if is_featured is not None: #is_featured = True or False 前端传值的时候需要注意！
         is_featured = is_featured.lower() == 'true'
         query = query.filter(Event.is_featured == is_featured)
+    # 下面这个比较新，暂时先把它归到外边 
+    # if is_hoted is not None: #is_hoted = True or False 前端传值的时候需要注意！
+    #     is_hoted = is_hoted.lower() == 'true'
+    #     query = query.order_by(Event.participate_counts.desc())
 
     # 分页（修正参数传递方式）
     page = request.args.get('page', 1, type=int)
@@ -109,6 +115,21 @@ def get_events():
         'pages': pagination.pages,
         'page': page,
         'per_page': per_page
+    })
+
+# 获取热门活动
+@event_bp.route('/hot_events', methods=['GET'])
+def get_hot_events():
+    event_items = Event.query.order_by(Event.participate_counts.desc()).limit(4).all()
+    hot_events = []
+    for event in event_items:
+        event_dict = event.to_dict()
+        event_dict.pop('type_id',None)
+        hot_events.append(event_dict)
+    return jsonify({
+        'code': 200,
+        'message': '获取热门活动成功',
+        'hot_events': hot_events
     })
 
 # 更新活动
