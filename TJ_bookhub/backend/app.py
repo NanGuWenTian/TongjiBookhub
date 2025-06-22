@@ -25,6 +25,8 @@ def create_app():
     app.register_blueprint(comments_bp)
     from routes.event import event_bp
     app.register_blueprint(event_bp)
+    from routes.event_category import event_category_bp
+    app.register_blueprint(event_category_bp)
 
 
     return app

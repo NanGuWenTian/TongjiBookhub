@@ -7,15 +7,15 @@
         class="carousel-item"
         @click="handleClick(item.id)"
       >
-        <img :src="item.url" :alt="item.title" class="carousel-image">
-        <!-- <div class="carousel-caption">
+        <img :src="item.image" :alt="item.title" class="carousel-image">
+        <div class="carousel-caption">
           <h3>{{ item.title }}</h3>
-          <p>{{ item.description }}</p>
+          <p>{{ item.brief }}</p>
           <div class="event-meta">
-            <span class="date">{{ item.date }}</span>
-            <span class="location">{{ item.location }}</span>
+            <span>{{ item.start_time }} - {{ item.end_time }}</span>
+            <span>{{ item.location }}</span>
           </div>
-        </div> -->
+        </div>
       </div>
     </div>
     
@@ -28,76 +28,38 @@
     
     <div class="carousel-indicators">
       <button 
-        v-for="item in events" 
+        v-for="(item,index) in events" 
         :key="item.id" 
-        :class="{ active: currentIndex === item.id-1 }"
-        @click="goTo(item.id - 1)"
+        :class="{ active: currentIndex === index }"
+        @click="goTo(index)"
       ></button>
     </div>
   </div>
 </template>
 
 <script setup>
-  import { ref, onMounted } from 'vue';
-  // const props = defineProps({
-  //   events: {
-  //     type: Array,
-  //     default: () => [
-  //       {
-  //         id: 1,
-  //         title: '默认活动1',
-  //         url: 'https://mp-db1971d7-59f6-422b-8fad-4b97767e2fbd.cdn.bspapp.com/staticEvent/event_1.jpg',
-  //         date: '2023-01-01',
-  //         location: '图书馆大厅',
-  //         description: '默认活动描述1'
-  //       },
-  //       {
-  //         id: 2,
-  //         title: '默认活动2',
-  //         url: 'https://mp-db1971d7-59f6-422b-8fad-4b97767e2fbd.cdn.bspapp.com/staticEvent/event_2.jpg',
-  //         date: '2023-01-02',
-  //         location: '体育馆',
-  //         description: '默认活动描述2'
-  //       },
-  //       {
-  //         id: 3,
-  //         title: '默认活动3',
-  //         url: 'https://mp-db1971d7-59f6-422b-8fad-4b97767e2fbd.cdn.bspapp.com/staticEvent/event_3.jpg',
-  //         date: '2023-01-03',
-  //         location: '学生活动中心',
-  //         description: '默认活动描述3'
-  //       }
-  //     ]
-  //   }
-  // });
-
-  const events = ref([
-  {
-          id: 1,
-          title: '默认活动1',
-          url: 'https://mp-db1971d7-59f6-422b-8fad-4b97767e2fbd.cdn.bspapp.com/staticEvent/event_12.jpg',
-          date: '2023-01-01',
-          location: '图书馆大厅',
-          description: '默认活动描述1'
-        },
+  import { ref, onMounted, defineProps } from 'vue';
+  const { events } = defineProps({
+    events: {
+      type: Array,
+      default: () => ([
         {
-          id: 2,
-          title: '默认活动2',
-          url: 'https://mp-db1971d7-59f6-422b-8fad-4b97767e2fbd.cdn.bspapp.com/staticEvent/event_13.jpg',
-          date: '2023-01-02',
-          location: '体育馆',
-          description: '默认活动描述2'
-        },
-        {
-          id: 3,
-          title: '默认活动3',
-          url: 'https://mp-db1971d7-59f6-422b-8fad-4b97767e2fbd.cdn.bspapp.com/staticEvent/event_3.jpg',
-          date: '2023-01-03',
-          location: '学生活动中心',
-          description: '默认活动描述3'
+          "title": "Test Event",
+          "type_id": 1,
+          "image": "test_image.jpg",
+          "start_time": "2024-01-01T12:00:00",
+          "end_time": "2024-01-02T12:00:00",
+          "location": "Test Location",
+          "brief": "Test brief",
+          "organizer": "Test Organizer",
+          "theme": "Test Theme",
+          "is_featured": true
         }
-  ])
-  const handleClick = (event_id)=>{
+      ])
+    }
+  });
+
+  const handleClick = (event_id) => {
     console.log("您已点击活动卡片");
     console.log(event_id);
   }
@@ -106,11 +68,11 @@
   // let autoPlayInterval;
 
   const next = () => {
-    currentIndex.value = (currentIndex.value + 1) % events.value.length;
+    currentIndex.value = (currentIndex.value + 1) % events.length;
   };
 
   const prev = () => {
-    currentIndex.value = (currentIndex.value - 1 + events.value.length) % events.value.length;
+    currentIndex.value = (currentIndex.value - 1 + events.length) % events.length;
   };
 
   const goTo = (index) => {
@@ -127,9 +89,9 @@
     // return () => clearInterval(autoPlayInterval);
   });
 
-  </script>
-  <style scoped lang="scss">
-    .carousel {
+</script>
+<style scoped lang="scss">
+  .carousel {
     position: relative;
     width: 100%;
     height: 540px;
@@ -151,7 +113,7 @@
           width: 100%;
           height: 100%;
           object-fit: cover;
-          filter: brightness(0.7);
+          filter: brightness(0.6);
         }
 
         .carousel-caption {
@@ -161,21 +123,26 @@
           right: 0;
           padding: 2rem;
           color: white;
-          // background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
+          background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
 
           h3 {
-            font-size: 1.8rem;
+            font-size: 2rem;
             margin-bottom: 0.5rem;
+            font-weight: 600;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
           }
 
           p {
             margin-bottom: 1rem;
+            font-size: 1.1rem;
+            line-height: 1.4;
           }
 
           .event-meta {
             display: flex;
             gap: 1rem;
             font-size: 0.9rem;
+            opacity: 0.8;
           }
         }
       }
@@ -234,4 +201,4 @@
       }
     }
   }
-  </style>
+</style>
