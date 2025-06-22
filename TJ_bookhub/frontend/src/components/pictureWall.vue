@@ -7,7 +7,7 @@
       :class="{ 'active': activeIndex === index }"
       @mouseenter="handleMouseEnter(index)"
       @mouseleave="handleMouseLeave"
-      @click="handleClick(item.url)"
+      @click="handleClick(item.id)"
     >
       <div class="image-wrapper">
         <img :src="item.image" :alt="item.title" class="wall-image">
@@ -22,30 +22,23 @@ import { ref, defineProps } from 'vue';
 
 const props = defineProps({
   items: {
-    type: Array,
-    default: () => [
-      {
-        image: 'https://mp-db1971d7-59f6-422b-8fad-4b97767e2fbd.cdn.bspapp.com/staticEvent/poster_1.jpeg',
-        title: '活动展览',
-        url: '#'
-      },
-      {
-        image: 'https://mp-db1971d7-59f6-422b-8fad-4b97767e2fbd.cdn.bspapp.com/staticEvent/poster_2.jpg',
-        title: '一起来阅读',
-        url: '#'
-      },
-      {
-        image: 'https://mp-db1971d7-59f6-422b-8fad-4b97767e2fbd.cdn.bspapp.com/staticEvent/poster_5.png',
-        title: '讲座',
-        url: '#'
-      },
-      {
-        image: 'https://mp-db1971d7-59f6-422b-8fad-4b97767e2fbd.cdn.bspapp.com/staticEvent/poster_4.png',
-        title: '展览',
-        url: '#'
-      }
-    ]
-  }
+      type: Array,
+      default: () => ([
+        {
+          "id":1,
+          "title": "Test Event",
+          "type_id": 1,
+          "image": "test_image.jpg",
+          "start_time": "2024-01-01T12:00:00",
+          "end_time": "2024-01-02T12:00:00",
+          "location": "Test Location",
+          "brief": "Test brief",
+          "organizer": "Test Organizer",
+          "theme": "Test Theme",
+          "is_featured": true
+        }
+      ])
+    }
 });
 console.log("下面是图片墙所接受到的数据");
 console.log(props.items);

@@ -33,6 +33,11 @@ def create_app():
     app.register_blueprint(event_bp)
     from routes.auth import authentication
     app.register_blueprint(authentication)
+    from routes.event_category import event_category_bp
+    app.register_blueprint(event_category_bp)
+    from routes.event_participation_record import event_participation_record_bp
+    app.register_blueprint(event_participation_record_bp)
+
 
 
     return app

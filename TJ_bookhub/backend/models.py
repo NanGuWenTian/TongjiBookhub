@@ -98,6 +98,12 @@ class EventCategory(db.Model):
     id = db.Column(db.Integer, primary_key=True,autoincrement=True)
     name = db.Column(db.String(50), unique=True, nullable=False)
 
+    # 补充一个连接关系
+    events = db.relationship('Event', backref='category',lazy=True)
+    # backref 是一个反向引用，它允许你从 Event 类的实例中访问关联的 EventCategory 实例
+    # 在 Event 类的实例中会自动添加一个名为 category 的属性，通过这个属性可以访问与之关联的 EventCategory 实例
+    # lazy 参数控制关联对象的加载方式。表示采用延迟加载（Lazy Loading）策略
+
 
 class Event(db.Model):
     __tablename__ = 'events'
@@ -112,7 +118,31 @@ class Event(db.Model):
     organizer = db.Column(db.String(200))  # 主办方
     theme = db.Column(db.String(200))     # 主题
     is_featured = db.Column(db.Boolean, default=False) # 是否为精选活动
+    participate_counts = db.Column(db.Integer, default=0)
 
+    # 转换成字典
+    def to_dict(self):
+        event_dict = {
+            'id': self.id,
+            'title': self.title,
+            'type_id': self.type_id,
+            'image': self.image,
+            'start_time': self.start_time.isoformat() if self.start_time else None,
+            'end_time': self.end_time.isoformat() if self.end_time else None,
+            'location': self.location,
+            'brief': self.brief,
+            'organizer': self.organizer,
+            'theme': self.theme,
+            'is_featured': self.is_featured,
+            'participate_counts': self.participate_counts
+        }
+        # 处理关联的活动种类信息
+        if self.category:
+            event_dict['category'] = {
+                'id': self.category.id,
+                'name': self.category.name
+            }
+        return event_dict
 
 class EventParticipationRecord(db.Model):
     __tablename__ = 'event_participation_records'

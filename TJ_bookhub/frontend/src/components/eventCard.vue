@@ -1,13 +1,18 @@
 <template>
   <div class="event-card" @click="handleClick(event.id)">
     <div class="event-image">
-      <img :src="event.url || 'https://mp-db1971d7-59f6-422b-8fad-4b97767e2fbd.cdn.bspapp.com/staticEvent/event_10.png'" :alt="event.title">
+      <img :src="event.image" :alt="event.title">
     </div>
     <div class="event-content">
-      <h3>{{ event.title }}</h3>
+      <div class="event-head">
+        <h3>{{ event.title }}</h3>
+        <span class="event-type">{{ event.category.name }}</span>
+      </div>
       <div class="event-meta">
-        <span class="event-type">{{ event.type }}</span>
-        <span class="event-date">{{ event.date }}</span>
+        <!-- <span class="event-date">{{ event.start_time }}-{{ event.end_time }}</span> -->
+        <span class="event-date">
+          {{ formatDateTime(event.start_time) }} - {{ formatDateTime(event.end_time) }}
+        </span>
       </div>
       <p class="event-brief">{{ event.brief }}</p>
       <div class="event-location">
@@ -23,18 +28,33 @@ import { defineProps } from 'vue';
 defineProps({
   event: {
     type: Object,
-    default: () => ({
-      id: 1,
-      title: '默认活动',
-      type: '讲座',
-      date: '2023-01-01',
-      brief: '这是一个默认活动描述，用于展示活动卡片的基本样式和功能。',
-      location: '图书馆报告厅',
-      image: './assets/event_1.jpg'
-    })
+    default: () => (
+      {
+          "title": "Test Event",
+          "type_id": 1,
+          "image": "test_image.jpg",
+          "start_time": "2024-01-01T12:00:00",
+          "end_time": "2024-01-02T12:00:00",
+          "location": "Test Location",
+          "brief": "Test brief",
+          "organizer": "Test Organizer",
+          "theme": "Test Theme",
+          "is_featured": true
+        }
+  )
   }
 });
-
+// 格式化日期时间的函数
+const formatDateTime = (dateTime) => {
+  const date = new Date(dateTime);
+  return date.toLocaleString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+};
 const handleClick = (id) => {
   console.log('点击了活动卡片，ID:', id);
   // 这里可以添加后续的点击处理逻辑
@@ -82,6 +102,12 @@ const handleClick = (id) => {
   margin: 0 0 0.5rem 0;
   color: #5a4a3a;
   font-size: 1.2rem;
+}
+.event-head {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: flex-start;
 }
 
 .event-meta {

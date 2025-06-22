@@ -12,24 +12,20 @@
       </div>
       
       <!-- 特色活动轮播 -->
-      <section class="featured-events">
-        <!-- <div class="section-header">
-          <h2>特色推荐活动</h2>
-        </div> -->
-        
+      <section class="featured-events">     
         <div class="carousel-container">
-          <carouselPart :items="featuredEvents" @item-click="navigateToEventDetail" />
+          <carouselPart :events="featuredEvents" @item-click="navigateToEventDetail" />
         </div>
       </section>
       
-      <!-- 活动搜索和筛选 -->
+      <!-- 活动搜索和筛选
       <section class="event-filter">
         <div class="search-box">
           <input 
             type="text" 
             v-model="searchQuery" 
             placeholder="搜索活动..." 
-            @submit="searchEvents"
+            @keyup.enter="searchEvents"
           >
           <select v-model="selectedCategory" @change="filterEvents">
             <option 
@@ -41,23 +37,50 @@
             </option>
           </select>
         </div>
-      </section>
+      </section> -->
       
-      <!-- 所有活动列表 -->
-      <section class="all-events">
-        <div class="section-header">
-          <!-- <h2>所有活动</h2> -->
-        </div>
-        
-        <div class="event-grid">
-          <eventCard 
-            v-for="event in filteredEvents" 
-            :key="event.id" 
-            :event="event" 
-            @click="navigateToEventDetail(event.id)"
-          />
+       <section class="all-events">
+          <div class="section-header">
+            <h2>活动搜索</h2>
+          </div>
+          <!-- 活动搜索和筛选 -->
+
+          <section class="event-filter">
+            <div class="search-box">
+              <input 
+                type="text" 
+                v-model="searchQuery" 
+                placeholder="搜索活动..." 
+                @keyup.enter="searchEvents"
+              >
+              <select v-model="selectedCategory" @change="filterEvents">
+                <option 
+                  v-for="category in eventCategories" 
+                  :key="category.id" 
+                  :value="category.id"
+                >
+                  {{ category.name }}
+                </option>
+              </select>
         </div>
       </section>
+
+
+          <div class="event-grid">
+              <eventCard 
+                  v-for="event in filteredEvents" 
+                  :key="event.id" 
+                  :event="event" 
+                  @click="navigateToEventDetail(event.id)"
+              />
+          </div>
+          <!-- 添加分页按钮 -->
+          <div class="pagination">
+              <button @click="prevPage" :disabled="currentPage === 1">上一页</button>
+              <button @click="nextPage" :disabled="currentPage === totalPages">下一页</button>
+              <span>第 {{ currentPage }} 页，共 {{ totalPages }} 页</span>
+          </div>
+        </section>
       
       <section class="class-events">
         <div class="section-header">
@@ -65,7 +88,7 @@
         </div>
         <div class="class-events-container">
           <pictureWall 
-            :items="classEvents" 
+            :items="hotedEvents" 
           />
         </div>
       </section>
@@ -101,175 +124,140 @@
     </div>
   </template>
   
-  <script setup>
-  import { ref, computed } from 'vue';
+<script setup>
+  import { ref, computed,onMounted} from 'vue';
+  import axios from 'axios';
   import carouselPart from '@/components/carouselPart.vue';
   import eventCard from '@/components/eventCard.vue';
   import pictureWall from '@/components/pictureWall.vue';
 
   // 特色活动数据，作为模拟，这里暂时没用
-  const featuredEvents = ref([
-    {
-      id: 1,
-      title: '古籍修复技艺展示',
-      url: '@/assets/event_1.jpg',
-      date: '2023-06-15',
-      location: '图书馆一楼大厅',
-      description: '邀请国家级古籍修复专家现场展示古籍修复技艺'
-    },
-    {
-      id: 2,
-      title: '国学经典诵读会',
-      url: '@/assets/event_2.jpg',
-      date: '2023-06-22',
-      location: '图书馆三楼报告厅',
-      description: '与国学大师一起诵读经典，领悟传统文化精髓'
-    },
-    {
-      id: 3,
-      title: '古籍修复技艺展示',
-      type: '传统文化',
-      date: '2023-06-15',
-      location: '图书馆一楼大厅',
-      brief: '国家级古籍修复专家现场展示'
-    },
-    {
-      id: 4,
-      title: '数字资源使用讲座',
-      type: '技术培训',
-      date: '2023-06-29',
-      location: '图书馆电子阅览室',
-      brief: '学习如何高效利用图书馆数字资源'
-    }
-  ]);
-
-  const allEvents = ref([
-    {
-      id: 1,
-      title: '古籍修复技艺展示',
-      type: '传统文化',
-      url: "https://mp-db1971d7-59f6-422b-8fad-4b97767e2fbd.cdn.bspapp.com/staticEvent/event_10.png",
-      date: '2023-06-15',
-      location: '图书馆一楼大厅',
-      brief: '国家级古籍修复专家现场展示'
-    },
-    {
-      id: 2,
-      title: '古籍修复技艺展示',
-      type: '艺术展览',
-      url:"https://mp-db1971d7-59f6-422b-8fad-4b97767e2fbd.cdn.bspapp.com/staticEvent/event_9.jpg",
-      date: '2023-06-15',
-      location: '图书馆一楼大厅',
-      brief: '国家级古籍修复专家现场展示'
-    },
-    {
-      id: 3,
-      title: '古籍修复技艺展示',
-      type: '技术讲座',
-      url:"https://mp-db1971d7-59f6-422b-8fad-4b97767e2fbd.cdn.bspapp.com/staticEvent/event_4.jpg",
-      date: '2023-06-15',
-      location: '图书馆一楼大厅',
-      brief: '国家级古籍修复专家现场展示'
-    },
-    {
-      id: 4,
-      title: '数字资源使用讲座',
-      type: '创新实践',
-      url:"https://mp-db1971d7-59f6-422b-8fad-4b97767e2fbd.cdn.bspapp.com/staticEvent/event_3.jpg",
-      date: '2023-06-29',
-      location: '图书馆电子阅览室',
-      brief: '学习如何高效利用图书馆数字资源'
-    },
-    {
-      id: 5,
-      title: '古籍修复技艺展示',
-      type: '技术讲座',
-      url:"https://mp-db1971d7-59f6-422b-8fad-4b97767e2fbd.cdn.bspapp.com/staticEvent/event_4.jpg",
-      date: '2023-06-15',
-      location: '图书馆一楼大厅',
-      brief: '国家级古籍修复专家现场展示'
-    },
-    {
-      id: 6,
-      title: '数字资源使用讲座',
-      type: '创新实践',
-      url:"https://mp-db1971d7-59f6-422b-8fad-4b97767e2fbd.cdn.bspapp.com/staticEvent/event_3.jpg",
-      date: '2023-06-29',
-      location: '图书馆电子阅览室',
-      brief: '学习如何高效利用图书馆数字资源'
-    },
-    {
-      id: 7,
-      title: '古籍修复技艺展示',
-      type: '传统文化',
-      url: "https://mp-db1971d7-59f6-422b-8fad-4b97767e2fbd.cdn.bspapp.com/staticEvent/event_10.png",
-      date: '2023-06-15',
-      location: '图书馆一楼大厅',
-      brief: '国家级古籍修复专家现场展示'
-    },
-    {
-      id: 8,
-      title: '古籍修复技艺展示',
-      type: '艺术展览',
-      url:"https://mp-db1971d7-59f6-422b-8fad-4b97767e2fbd.cdn.bspapp.com/staticEvent/event_9.jpg",
-      date: '2023-06-15',
-      location: '图书馆一楼大厅',
-      brief: '国家级古籍修复专家现场展示'
-    }
-  ]);
+  const featuredEvents = ref([]);
+  const allEvents = ref([]);
+  const hotedEvents = ref([]);
 
   const eventCategories = ref([
-    { id: 0, name: '所有类别' },
-    { id: 1, name: '传统文化' },
-    { id: 2, name: '艺术展览' },
-    { id: 3, name: '技术讲座' },
-    { id: 4, name: '创新实践' }
+      { id: 0, name: '所有类别' },
+      { id: 1, name: '书香雅集' },
+      { id: 2, name: '传统文化' },
+      { id: 3, name: '艺术展览' },
+      { id: 4, name: '创新实践' },
+      { id: 5, name: '艺术展览' }
   ]);
-
-  const pastEvents = ref([
-    {
-      id: 101,
-      title: '春季读书月开幕式',
-      organizer: '图书馆阅读推广部',
-      theme: '书香满园',
-      date: '2023-03-01',
-      participants: 120,
-      evaluations: [
-        { user: '张同学', comment: '活动组织得很好，收获很大！' },
-        { user: '李老师', comment: '希望多举办类似活动' }
-      ]
-    }
-  ]);
+  const pastEvents = ref([]);
 
   // 搜索和筛选功能
-  const searchQuery = ref('');
+  const searchQuery = ref();
   const selectedCategory = ref(0);
 
+  // 分页相关状态
+  const currentPage = ref(1);
+  const perPage = ref(8);
+  const totalPages = ref(1);
+
   const filteredEvents = computed(() => {
-    return allEvents.value.filter(event => {
-      // const matchesSearch = event.title.toLowerCase().includes(searchQuery.value.toLowerCase()) && searchQuery.value;
-      const matchesCategory = !selectedCategory.value || event.type ===eventCategories.value[selectedCategory.value].name;
-      return matchesCategory;
-    });
+      return allEvents.value;
   });
 
+  // 获取活动列表
+  const fetchEvents = async () => {
+      try {
+          const response = await axios.get('/api/events', {
+              params: {
+                  title: searchQuery.value,
+                  type_id: selectedCategory.value === 0 ? null : selectedCategory.value,
+                  page: currentPage.value,
+                  per_page: perPage.value
+              }
+          });
+          allEvents.value = response.data.event_items;
+          totalPages.value = response.data.pages;
+
+          // 下面是测试信息
+          console.log('获取活动列表成功,信息如下');
+          console.log(allEvents.value);
+      } catch (error) {
+          console.error('获取活动列表失败:', error);
+      }
+  };
+
+  //获取特色活动-轮播图部分
+  const getFeaturedEvents = async () => { 
+      try {
+          const response = await axios.get('/api/events', {
+              params: {
+                  is_featured:'true'
+              }
+          });
+          featuredEvents.value = response.data.event_items;
+
+          // 下面是测试信息
+          console.log('获取特色活动成功,信息如下');
+          console.log(featuredEvents.value);
+      }
+      catch (error) {
+          console.error('获取特色活动失败:', error);
+      }
+  };
+
+  // 获取热门活动
+  const getHotEvents = async () => { 
+    try{
+      const response = await axios.get('/api/events/hot_events');
+      hotedEvents.value = response.data.hot_events;
+
+      // 下面是测试信息
+      console.log('获取热门活动成功,信息如下');
+      console.log(hotedEvents.value);
+    }
+    catch(error){
+      console.error('获取热门活动失败:', error);
+    }
+  };
   //实现搜索功能
-  const searchEvents =()=>{
-    console.log('您已点击了提交了搜索内容');
-    console.log(searchQuery.value);
-  }
+  const searchEvents = async () => {
+      console.log('您已点击了提交了搜索内容');
+      console.log(searchQuery.value);
+      currentPage.value = 1; // 搜索时重置页码
+      await fetchEvents();
+  };
 
   //实现筛选功能
-  const filterEvents =()=>{
-    console.log('您已点击了筛选,当前类别为');
-    console.log(selectedCategory.value);
-  }
+  const filterEvents = async () => {
+      console.log('您已点击了筛选,当前类别为');
+      console.log(selectedCategory.value);
+      currentPage.value = 1; // 筛选时重置页码
+      await fetchEvents();
+  };
+
+  // 上一页
+  const prevPage = async () => {
+      if (currentPage.value > 1) {
+          currentPage.value--;
+          await fetchEvents();
+      }
+  };
+
+  // 下一页
+  const nextPage = async () => {
+      if (currentPage.value < totalPages.value) {
+          currentPage.value++;
+          await fetchEvents();
+      }
+  };
+
   //实现页面跳转
   const navigateToEventDetail = (eventId) => {
-    console.log('您已点击了活动卡片');
-    console.log(eventId);
-  }
-  </script>
+      console.log('您已点击了活动卡片-组件外部');
+      console.log(eventId);
+  };
+
+  onMounted(() => {
+    fetchEvents();
+    getFeaturedEvents();
+    getHotEvents();
+  });
+</script>
   
   <style scoped lang="scss">
   .event-recommendation-view {
@@ -375,6 +363,13 @@
       grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
       gap: 1.5rem;
       margin-bottom: 3rem;
+    }
+    .pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1rem;
     }
 
     .past-events-container {
