@@ -109,13 +109,24 @@
           <a href="#" @click.prevent="$emit('switch-to-login')">立即登录</a>
         </p>
       </form>
+      <div v-if="isRegistering" class="loading-overlay">
+        <div class="loading-spinner"></div>
+        <p>注册中，请稍候...</p>
+      </div>
+      <div v-if="isLogining" class="loading-overlay">
+        <div class="loading-spinner"></div>
+        <p>自动登录中，请稍候...</p>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
+import { useRouter } from 'vue-router';
 import { ref, computed, reactive, watch } from 'vue';
-import { getCaptcha, register } from '../api/auth';
+import { getCaptcha, register, login } from '../api/auth';
+const router = useRouter()
+const emit = defineEmits(['close', 'switch-to-login'])
 
 
 // 表单数据
@@ -127,7 +138,6 @@ const form = reactive({
   captcha: '',
   autoLogin: true
 });
-
 // 错误信息
 const errors = reactive({
   username: '',
@@ -136,12 +146,15 @@ const errors = reactive({
   confirmPassword: '',
   captcha: ''
 });
-
 // 验证码相关状态
 const captchaCooldown = ref(0);
 const captchaButtonText = computed(() => 
   captchaCooldown.value > 0 ? `${captchaCooldown.value}s后重新获取` : '获取验证码'
 );
+// 加载状态
+const isRegistering = ref(false);
+const isLogining = ref(false);
+
 
 // 表单验证状态
 const formValid = computed(() => {
@@ -225,6 +238,8 @@ const sendCaptcha = async () => {
 const handleRegister = async () => {
   if (!formValid.value) return;
   
+  isRegistering.value = true;
+  
   const result = await register({
     username: form.username,
     email: form.email,
@@ -233,16 +248,30 @@ const handleRegister = async () => {
   });
 
   if (result.code !== 200) {
+    isRegistering.value = false;
     alert(result.msg || '注册失败');
     return;
   }
 
   alert('注册成功');
-
+  isRegistering.value = false;
+  
   if (form.autoLogin) {
-
-    // 自动登录逻辑
-    console.log('自动登录中...');
+    isLogining.value = true;
+    const result = await login({ account: form.username, password: form.password });
+    if (result.code !== 200) {
+      alert(result.msg || '登录失败');
+      return;
+    }
+    
+    alert('登录成功！');
+    isLogining.value = false;
+    localStorage.setItem('access_token', result.data.access_token)
+    localStorage.setItem('refresh_token', result.data.refresh_token)
+    router.push('/index');
+  }
+  else {
+    emit('switch-to-login');
   }
 };
 
@@ -269,7 +298,7 @@ watch(
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
+  z-index: 101;
 }
 
 .modal {
@@ -476,5 +505,36 @@ input::placeholder {
 
 .switch-text a:hover {
   text-decoration: underline;
+}
+
+
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.7);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.loading-spinner {
+  border: 4px solid #ccc;
+  border-top: 4px solid #3498db;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  animation: spin 1s linear infinite;
+  margin-bottom: 10px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>

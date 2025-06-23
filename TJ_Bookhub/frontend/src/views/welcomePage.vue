@@ -101,7 +101,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, watch, onBeforeUnmount } from 'vue';
 import LoginModal from '@/components/loginModal.vue';
 import RegisterModal from '@/components/registerModal.vue';
 import 'animate.css';
@@ -147,6 +147,34 @@ const closeModal = () => {
   showLoginModal.value = false;
   showRegisterModal.value = false;
 };
+
+function preventBodyScroll() {
+  const scrollBarWidth = window.innerWidth - document.documentElement.clientWidth
+  document.body.style.overflow = 'hidden'
+  if (scrollBarWidth > 0) {
+    document.body.style.paddingRight = scrollBarWidth + 'px'
+  }
+}
+
+function restoreBodyScroll() {
+  document.body.style.overflow = '';
+  document.body.style.paddingRight = '';
+}
+
+watch(
+  () => showLoginModal.value || showRegisterModal.value,
+  (visible) => {
+    if (visible) {
+      preventBodyScroll();
+    } else {
+      restoreBodyScroll();
+    }
+  }
+);
+
+onBeforeUnmount(() => {
+  restoreBodyScroll();
+});
 </script>
 
 <style scoped>

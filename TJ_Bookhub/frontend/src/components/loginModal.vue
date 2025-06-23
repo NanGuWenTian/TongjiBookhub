@@ -6,7 +6,7 @@
       <form @submit.prevent="handleLogin">
         <div class="form-group">
           <label for="account">用户名/邮箱</label>
-          <input type="account" id="account" v-model="account" required>
+          <input type="text" id="account" v-model="account" required>
         </div>
         <div class="form-group">
           <label for="password">密码</label>
@@ -15,36 +15,54 @@
         <button type="submit" class="submit-button">登录</button>
       </form>
       <p class="switch-text">还没有账号？<a href="#" @click.prevent="$emit('switch-to-register')">立即注册</a></p>
+      <div v-if="isLogining" class="loading-overlay">
+        <div class="loading-spinner"></div>
+        <p>登录中，请稍候...</p>
+      </div>
     </div>
   </div>
+  <Vcode :show="isShow" @success="onSuccess" @close="onClose"/>
 </template>
 
 <script setup>
 import { ref } from 'vue';
 import { login} from '../api/auth';
 import { useRouter } from 'vue-router';
-
+import Vcode from "vue3-puzzle-vcode";
 
 const account = ref('');
 const password = ref('');
 const router = useRouter();
+const isShow = ref(false);
+const isLogining = ref(false);
+
+const onClose = () => {
+  isShow.value = false;
+};
+
+const onSuccess = async () => {
+  onClose();
+  isLogining.value = true;
+  const result = await login({ account: account.value, password: password.value });
+  if (result.code !== 200) {
+    isLogining.value = false;
+    alert(result.msg || '登录失败');
+    return;
+  }
+  
+  alert('登录成功！');
+  isLogining.value = false;
+  localStorage.setItem('access_token', result.data.access_token)
+  localStorage.setItem('refresh_token', result.data.refresh_token)
+  router.push('/index');
+};
 
 const handleLogin = async () => {
   if (!account.value || !password.value) {
     alert('请填写账号和密码');
     return;
   }
-
-  const result = await login({ account: account.value, password: password.value });
-  if (result.code !== 200) {
-    alert(result.msg || '登录失败');
-    return;
-  }
-  
-  alert('登录成功！');
-  localStorage.setItem('access_token', result.data.access_token)
-  localStorage.setItem('refresh_token', result.data.refresh_token)
-  router.push('/login');
+  isShow.value = true;
 };
 </script>
 
@@ -59,7 +77,7 @@ const handleLogin = async () => {
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
+  z-index: 101;
 }
 
 .modal {
@@ -100,10 +118,11 @@ label {
 
 input {
   width: 100%;
-  padding: 0.8rem 0em;
+  padding: 0.8rem 0.6em;
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 1rem;
+  box-sizing: border-box;
 }
 
 .submit-button {
@@ -135,5 +154,35 @@ input {
 
 .switch-text a:hover {
   text-decoration: underline;
+}
+
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.7);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.loading-spinner {
+  border: 4px solid #ccc;
+  border-top: 4px solid #3498db;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  animation: spin 1s linear infinite;
+  margin-bottom: 10px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>
