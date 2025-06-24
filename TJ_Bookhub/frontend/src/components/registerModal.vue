@@ -125,6 +125,7 @@
 import { useRouter } from 'vue-router';
 import { ref, computed, reactive, watch } from 'vue';
 import { getCaptcha, register, login } from '../api/auth';
+import { ElMessage } from 'element-plus'
 const router = useRouter()
 const emit = defineEmits(['close', 'switch-to-login'])
 
@@ -219,10 +220,10 @@ const sendCaptcha = async () => {
 
   const result = await getCaptcha(form.email);
   if (result.code !== 200) {
-    alert(result.msg || '发送失败');
+    ElMessage.error(result.msg || '发送失败');
     return;
   }
-  alert('验证码已发送，请查收。');
+  ElMessage.success('验证码已发送，请查收。');
 
   // 设置60秒冷却
   captchaCooldown.value = 60;
@@ -234,6 +235,9 @@ const sendCaptcha = async () => {
   }, 1000);
 };
 
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
 // 处理注册
 const handleRegister = async () => {
   if (!formValid.value) return;
@@ -247,32 +251,33 @@ const handleRegister = async () => {
     captcha: form.captcha
   });
 
+  await sleep(500); 
+  isRegistering.value = false;
+
   if (result.code !== 200) {
-    isRegistering.value = false;
-    alert(result.msg || '注册失败');
+    ElMessage.error(result.msg || '注册失败');
     return;
   }
 
-  alert('注册成功');
-  isRegistering.value = false;
+  ElMessage.success('注册成功！');
   
   if (form.autoLogin) {
     isLogining.value = true;
     const result = await login({ account: form.username, password: form.password });
-    if (result.code !== 200) {
-      alert(result.msg || '登录失败');
-      return;
-    }
-    
-    alert('登录成功！');
+    await sleep(1500);
     isLogining.value = false;
-    localStorage.setItem('access_token', result.data.access_token)
-    localStorage.setItem('refresh_token', result.data.refresh_token)
+    if (result.code !== 200) {
+      ElMessage.error(result.msg || '登录失败');
+      return;
+    } 
+    ElMessage.success('登录成功！');
+    localStorage.setItem('access_token', result.data.access_token);
+    localStorage.setItem('refresh_token', result.data.refresh_token);
     router.push('/index');
   }
   else {
     emit('switch-to-login');
-  }
+  }    
 };
 
 // 监听表单变化

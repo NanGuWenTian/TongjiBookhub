@@ -29,6 +29,7 @@ import { ref } from 'vue';
 import { login} from '../api/auth';
 import { useRouter } from 'vue-router';
 import Vcode from "vue3-puzzle-vcode";
+import { ElMessage } from 'element-plus'
 
 const account = ref('');
 const password = ref('');
@@ -36,30 +37,35 @@ const router = useRouter();
 const isShow = ref(false);
 const isLogining = ref(false);
 
+
 const onClose = () => {
   isShow.value = false;
 };
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 const onSuccess = async () => {
   onClose();
   isLogining.value = true;
   const result = await login({ account: account.value, password: password.value });
+  await sleep(500);
+  isLogining.value = false;
   if (result.code !== 200) {
-    isLogining.value = false;
-    alert(result.msg || '登录失败');
+    ElMessage.error(result.msg || '登录失败');
     return;
   }
   
-  alert('登录成功！');
-  isLogining.value = false;
-  localStorage.setItem('access_token', result.data.access_token)
-  localStorage.setItem('refresh_token', result.data.refresh_token)
+  ElMessage.success('登录成功！');
+  localStorage.setItem('access_token', result.data.access_token);
+  localStorage.setItem('refresh_token', result.data.refresh_token);
   router.push('/index');
 };
 
 const handleLogin = async () => {
   if (!account.value || !password.value) {
-    alert('请填写账号和密码');
+    ElMessage.warning('请填写账号和密码!');
     return;
   }
   isShow.value = true;
