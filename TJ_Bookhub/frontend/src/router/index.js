@@ -1,8 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
-// import SearchPage from '../views/SearchPage.vue'
 import welcomePage from '../views/welcomePage.vue'
 import indexPage from '../views/indexPage.vue'
-import BookDetailedPage from '@/views/BookDetailedPage.vue'
+import searchPage from '../views/searchPage.vue'
+import bookDetailedPage from '../views/bookDetailedPage.vue'
 
 const routes = [
   {
@@ -16,9 +16,14 @@ const routes = [
     component: indexPage
   },
   {
+    path: '/search',
+    name: 'searchPage',
+    component: searchPage
+  },
+  {
     path: '/book/:id',
-    name: 'BookDetail',
-    component: BookDetailedPage
+    name: 'bookDetailedPage',
+    component: bookDetailedPage
   },
   {
     path: '/analysis',

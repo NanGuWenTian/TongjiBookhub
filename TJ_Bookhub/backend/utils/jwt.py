@@ -1,12 +1,13 @@
 import jwt
 from datetime import datetime, timedelta
 from flask import request, jsonify
+from config import Config
 
 # 配置常量
-SECRET_KEY = 'your-secret-key'  # 建议改成保存在环境变量中
-ALGORITHM = 'HS256'
-ACCESS_TOKEN_EXPIRE_MINUTES = 15
-REFRESH_TOKEN_EXPIRE_DAYS = 7
+SECRET_KEY = Config.SECRET_KEY
+ALGORITHM = Config.ALGORITHM
+ACCESS_TOKEN_EXPIRE = 15
+REFRESH_TOKEN_EXPIRE = 8
 
 
 def create_token(user_id, expires_delta, token_type):
@@ -24,12 +25,12 @@ def create_token(user_id, expires_delta, token_type):
 
 def create_access_token(user_id):
     """生成 access token"""
-    return create_token(user_id, timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES), token_type='access')
+    return create_token(user_id, timedelta(minutes=ACCESS_TOKEN_EXPIRE), token_type='access')
 
 
 def create_refresh_token(user_id):
     """生成 refresh token"""
-    return create_token(user_id, timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS), token_type='refresh')
+    return create_token(user_id, timedelta(hours=REFRESH_TOKEN_EXPIRE), token_type='refresh')
 
 
 def verify_token(token):

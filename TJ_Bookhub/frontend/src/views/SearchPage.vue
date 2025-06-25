@@ -1,8 +1,6 @@
 <template>
   <div class="library-container">
-    <!-- 主内容区 -->
     <div class="library-content">
-      <!-- 顶部标题和搜索栏 -->
       <div class="library-header">
         <div class="title-container">
           <h1 class="library-title">📚 图书检索</h1>
@@ -23,7 +21,7 @@
               @keyup.enter="searchBooks"
             >
             <button class="search-button" @click="searchBooks">
-              <span class="search-icon">🔍</span>
+              <span class="search-icon">搜索</span>
             </button>
           </div>
           
@@ -39,18 +37,11 @@
                 <option value="title_asc">书名 (A-Z)</option>
                 <option value="title_desc">书名 (Z-A)</option>
                 <option value="author_asc">作者 (A-Z)</option>
+                <option value="author_desc">作者 (Z-A)</option>
                 <option value="publish_date_desc">出版日期 (最新)</option>
                 <option value="publish_date_asc">出版日期 (最旧)</option>
               </select>
             </div>
-            
-            <button 
-              v-if="isAdmin" 
-              class="add-book-button" 
-              @click="showAddBookModal = true"
-            >
-              <span class="plus-icon">+</span> 添加图书
-            </button>
           </div>
         </div>
       </div>
@@ -73,11 +64,12 @@
 
         <transition-group name="book-list" tag="div" class="book-list-single">
           <div 
-            v-for="(book, index) in paginatedBooks" 
+            v-for="(book, index) in displayBooks" 
             :key="book.id" 
             class="book-card-single"
             :style="{ 'transition-delay': `${index * 0.05}s` }"
           >
+            <button class="look-button" @click="lookBook(book)">查看</button>
             <div class="book-cover-container">
               <div class="book-cover-placeholder" v-if="!book.cover_image">
                 <span class="cover-text">{{ book.title.substring(0, 2) }}</span>
@@ -101,47 +93,14 @@
               <p class="book-isbn">ISBN: {{ book.isbn }}</p>
               <p class="book-category">分类: {{ book.category || '未分类' }}</p>
               <p class="book-publish-date">出版日期: {{ formatDate(book.publish_date) }}</p>
-              <p class="book-copies">库存: {{ book.available_copies }} / {{ book.total_copies }}</p>
-              <p class="book-description">{{ book.description || '暂无简介' }}</p>
-              <div class="book-actions">
-                <button class="look-button" @click="lookBook(book)">查看</button>
-                <div v-if="isAdmin" class="admin-actions">
-                  <button class="edit-button" @click="editBook(book)">编辑</button>
-                  <button class="delete-button" @click="deleteBook(book.id)">删除</button>
-                </div>
-              </div>
+              <p class="book-description">{{ truncateDescription(book.description) }}</p>
             </div>
           </div>
         </transition-group>
       </div>
 
       <!-- 分页控件 -->
-      <!-- <div v-if="books.length > 0" class="pagination">
-        <button 
-          class="page-button" 
-          :disabled="currentPage === 1" 
-          @click="changePage(currentPage - 1)"
-        >
-          &lt; 上一页
-        </button>
-        <span 
-          v-for="page in visiblePages" 
-          :key="page"
-          class="page-number"
-          :class="{ 'active': page === currentPage }"
-          @click="changePage(page)"
-        >
-          {{ page }}
-        </span>
-        <button 
-          class="page-button" 
-          :disabled="currentPage >= totalPages" 
-          @click="changePage(currentPage + 1)"
-        >
-          下一页 &gt;
-        </button>
-      </div> -->
-      <div v-if="books.length > 0" class="pagination">
+      <div v-if="books.length > 0" class="pagination" ref="paginationRef">
         <button 
           class="page-button" 
           :disabled="currentPage === 1" 
@@ -157,195 +116,167 @@
         >
           下一页
         </button>
-      </div>
-
-      <!-- 添加/编辑图书模态框 -->
-      <BookModal 
-        v-if="showAddBookModal || showEditBookModal"
-        :book="currentBook"
-        :isEdit="showEditBookModal"
-        @close="closeModal"
-        @save="saveBook"
-      />
+        <input 
+          v-model.number="jumpPage"
+          type="number"
+          min="1"
+          :max="totalPages"
+          class="jump-input"
+          placeholder="页码"
+          @keyup.enter="jumpToPage"
+        />
+        <button 
+          class="page-button" 
+          @click="jumpToPage"
+        >
+          跳转
+        </button>
+      </div>   
     </div>
   </div>
 </template>
 
-<script>
-import { mapState } from 'vuex'
-import BookModal from '@/components/BookModal.vue'
-import { fetchBooks, addBook, updateBook, deleteBook } from '@/api/books'
+<script setup>
+import { ref, computed, onMounted, nextTick } from 'vue'
+import { useRouter } from 'vue-router'
+import { getBooks } from '@/api/books'
+import { ElMessage } from 'element-plus'
 
-export default {
-  components: { BookModal },
-  data() {
-    return {
-      books: [],
-      searchQuery: '',
-      searchType: 'title',
-      selectedCategory: '',
-      categories: ['文学', '科技', '历史', '艺术', '小说', '传记', '计算机', '心理学'],
-      showAddBookModal: false,
-      showEditBookModal: false,
-      currentBook: null,
-      loading: false,
-      currentPage: 1,
-      itemsPerPage: 5, // 每页显示5本书
-      totalItems: 0,
-      sortOption: 'title_asc'
+const router = useRouter()
+
+const books = ref([])
+const searchQuery = ref('')
+const searchType = ref('title')
+const loading = ref(false)
+const currentPage = ref(1)
+const itemsPerPage = 5
+const totalItems = ref(0)
+const sortOption = ref('title_asc')
+const paginationRef = ref(null)
+const jumpPage = ref(null)
+
+const searchTypePlaceholder = computed(() => {
+  const types = {
+    title: '书名',
+    author: '作者',
+    isbn: 'ISBN',
+    category: '分类'
+  }
+  return types[searchType.value]
+})
+
+function truncateDescription(desc) {
+  if (!desc) return '暂无简介'
+  return desc.length > 100 ? desc.slice(0, 100) + '...' : desc
+}
+
+function formatDate(dateString) {
+  if (!dateString) return '未知'
+  const date = new Date(dateString)
+  return date.toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit'
+  })
+}
+
+const sortedBooks = computed(() => {
+  return [...books.value].sort((a, b) => {
+    switch (sortOption.value) {
+      case 'title_asc': return a.title.localeCompare(b.title)
+      case 'title_desc': return b.title.localeCompare(a.title)
+      case 'author_asc': return a.author.localeCompare(b.author)
+      case 'author_desc': return b.author.localeCompare(a.author)
+      case 'publish_date_desc': return new Date(b.publish_date) - new Date(a.publish_date)
+      case 'publish_date_asc': return new Date(a.publish_date) - new Date(b.publish_date)
+      default: return 0
     }
-  },
-  computed: {
-    ...mapState(['user']),
-    isAdmin() {
-      return true
-      // return this.user && this.user.is_admin
-    },
-    searchTypePlaceholder() {
-      const types = {
-        title: '书名',
-        author: '作者',
-        isbn: 'ISBN',
-        category: '分类'
-      }
-      return types[this.searchType] || '书名'
-    },
-    totalPages() {
-      return Math.ceil(this.totalItems / this.itemsPerPage)
-    },
-    sortedBooks() {
-      return [...this.books].sort((a, b) => {
-        switch(this.sortOption) {
-          case 'title_asc': return a.title.localeCompare(b.title)
-          case 'title_desc': return b.title.localeCompare(a.title)
-          case 'author_asc': return a.author.localeCompare(b.author)
-          case 'publish_date_desc': return new Date(b.publish_date) - new Date(a.publish_date)
-          case 'publish_date_asc': return new Date(a.publish_date) - new Date(b.publish_date)
-          default: return 0
-        }
-      })
-    },
-    paginatedBooks() {
-      const start = (this.currentPage - 1) * this.itemsPerPage
-      const end = start + this.itemsPerPage
-      return this.sortedBooks.slice(start, end)
-    },
-    visiblePages() {
-      const pages = []
-      const range = 2
-      let start = Math.max(1, this.currentPage - range)
-      let end = Math.min(this.totalPages, this.currentPage + range)
-      
-      if (start > 1) pages.push(1)
-      if (start > 2) pages.push('...')
-      
-      for (let i = start; i <= end; i++) {
-        pages.push(i)
-      }
-      
-      if (end < this.totalPages - 1) pages.push('...')
-      if (end < this.totalPages) pages.push(this.totalPages)
-      
-      return pages
-    }
-  },
-  created() {
-    this.loadBooks()
-  },
-  methods: {
-    async loadBooks() {
-      this.loading = true
-      try {
-        const params = {
-          [this.searchType]: this.searchQuery,
-          category: this.selectedCategory,
-          page: this.currentPage,
-          limit: this.itemsPerPage
-        }
-        const { data } = await fetchBooks(params)
-        this.books = data
-        this.totalItems = data.length
-      } catch (error) {
-        console.error(error)
-      } finally {
-        this.loading = false
-      }
-    },
-    searchBooks() {
-      this.currentPage = 1
-      this.loadBooks()
-    },
-    sortBooks() {
-      this.currentPage = 1
-    },
-    editBook(book) {
-      this.currentBook = { ...book }
-      this.showEditBookModal = true
-    },
-    async deleteBook(id) {
-      if (confirm('确定要删除这本书吗？')) {
-        try {
-          await deleteBook(id)
-          this.loadBooks()
-        } catch (error) {
-          console.error(error)
-        }
-      }
-    },
-    lookBook(book) {
-      this.$router.push({
-        name: 'BookDetail',
-        params: { id: book.id }
-      });
-    },
-    closeModal() {
-      this.showAddBookModal = false
-      this.showEditBookModal = false
-      this.currentBook = null
-    },
-    async saveBook(bookData) {
-      try {
-        if (bookData.id) {
-          await updateBook(bookData.id, bookData)
-        } else {
-          await addBook(bookData)
-        }
-        this.closeModal()
-        this.loadBooks()
-      } catch (error) {
-        console.error(error)
-      }
-    },
-    handleImageError(event) {
-      event.target.src = ''
-    },
-    formatDate(dateString) {
-      if (!dateString) return '未知'
-      const date = new Date(dateString)
-      return date.toLocaleDateString()
-    },
-    changePage(page) {
-      if (page >= 1 && page <= this.totalPages && page !== this.currentPage) {
-        this.currentPage = page
-        this.loadBooks()
-        window.scrollTo({ top: 0, behavior: 'smooth' })
-      }
-    }
+  })
+})
+
+const displayBooks = computed(() => {
+  return sortedBooks.value.slice(0, itemsPerPage)
+})
+
+async function loadBooks() {
+  loading.value = true
+  const params = {
+    [searchType.value]: searchQuery.value,
+    page: currentPage.value,
+    limit: itemsPerPage
+  }
+
+  const result = await getBooks(params)
+
+  loading.value = false
+  if (result.code !== 200) {
+    ElMessage.error(result.msg || '载入失败');
+    return;
+  }
+  else {
+    books.value = result.data
+    totalItems.value = result.total
   }
 }
+
+function searchBooks() {
+  currentPage.value = 1
+  loadBooks()
+}
+
+function sortBooks() {
+  currentPage.value = 1
+  loadBooks()
+}
+
+function lookBook(book) {
+  router.push({ name: 'bookDetailedPage', params: { id: book.id } })
+}
+
+const totalPages = computed(() => Math.ceil(totalItems.value / itemsPerPage))
+
+function changePage(page) {
+  if (page >= 1 && page <= totalPages.value && page !== currentPage.value) {
+    currentPage.value = page
+    loadBooks()
+    nextTick(() => {
+      setTimeout(() => {
+        paginationRef.value?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'end'
+        })
+      }, 500)
+    })
+  }
+}
+
+function jumpToPage() {
+  if (
+    Number.isInteger(jumpPage.value) &&
+    jumpPage.value >= 1 &&
+    jumpPage.value <= totalPages.value
+  ) {
+    changePage(jumpPage.value)
+  } else {
+    ElMessage.warning(`请输入 1 到 ${totalPages.value} 的有效页码`)
+  }
+}
+
+onMounted(() => {
+  loadBooks()
+})
 </script>
 
 <style scoped>
 /* 基础样式 */
 .library-container {
-  font-family: 'Noto Serif SC', 'SimSun', serif;
-  max-width: 1400px;
+  font-family: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  max-width: 80%;
   margin: 0 auto;
   padding: 20px;
   color: #333;
-  background-color: #f5f1e8;
+  background-color: #f8fafc;
   min-height: 100vh;
-  box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.05);
 }
 
 .library-content {
@@ -354,12 +285,12 @@ export default {
 
 /* 顶部标题和搜索栏 */
 .library-header {
-  background-color: #5d4037;
-  padding: 20px 25px;
-  border-radius: 5px;
+  background: linear-gradient(135deg, #4a89dc 0%, #3b7dd8 100%);
+  padding: 25px 30px;
+  border-radius: 8px;
   margin-bottom: 25px;
   color: #fff;
-  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16);
+  box-shadow: 0 4px 12px rgba(74, 137, 220, 0.2);
 }
 
 .title-container {
@@ -369,42 +300,46 @@ export default {
 
 .library-title {
   margin: 0;
-  font-size: 2rem;
+  font-size: 2.2rem;
   color: #fff;
   letter-spacing: 1px;
+  font-weight: 600;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .library-subtitle {
-  margin: 5px 0 0;
-  font-size: 0.9rem;
-  color: #d7ccc8;
+  margin: 8px 0 0;
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.9);
   font-style: italic;
 }
 
 /* 搜索框样式 */
 .search-container {
-  margin-bottom: 15px;
+  margin-bottom: 0px;
 }
 
 .search-box {
   display: flex;
   background: white;
-  border-radius: 4px;
+  border-radius: 6px;
   overflow: hidden;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
   margin-bottom: 15px;
+  border: 1px solid #e0e6ed;
 }
 
 .search-type {
   padding: 10px 12px;
   border: none;
-  background: #d7ccc8;
+  background: #e6f0fd;
   font-size: 14px;
   cursor: pointer;
   outline: none;
   min-width: 90px;
-  color: #3e2723;
-  border-right: 1px solid #bcaaa4;
+  color: #2c3e50;
+  border-right: 1px solid #d4e1f8;
+  font-weight: 500;
 }
 
 .search-input {
@@ -414,19 +349,25 @@ export default {
   font-size: 15px;
   outline: none;
   background: #fff;
+  color: #3c4858;
+}
+
+.search-input::placeholder {
+  color: #b8c2cc;
 }
 
 .search-button {
-  padding: 0 18px;
+  padding: 0 20px;
   border: none;
-  background: #8d6e63;
+  background: #4a89dc;
   color: white;
   cursor: pointer;
-  transition: background 0.3s;
+  transition: all 0.3s ease;
+  font-weight: 500;
 }
 
 .search-button:hover {
-  background: #6d4c41;
+  background: #3b7dd8;
 }
 
 .search-icon {
@@ -443,44 +384,30 @@ export default {
 .sort-container {
   display: flex;
   align-items: center;
+  margin-top: 5px;
 }
 
 .sort-label {
   margin-right: 8px;
   font-size: 14px;
-  color: #efebe9;
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .sort-select {
   padding: 8px 12px;
   border-radius: 4px;
-  border: none;
+  border: 1px solid #e0e6ed;
   background: #fff;
   font-size: 14px;
   cursor: pointer;
   outline: none;
   min-width: 160px;
-  color: #3e2723;
+  color: #3c4858;
+  transition: all 0.3s ease;
 }
 
-.add-book-button {
-  padding: 8px 16px;
-  background: #a1887f;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.add-book-button:hover {
-  background: #8d6e63;
-  transform: translateY(-1px);
-}
-
-.plus-icon {
-  margin-right: 5px;
+.sort-select:hover {
+  border-color: #c4d5f1;
 }
 
 /* 图书列表样式 */
@@ -499,8 +426,8 @@ export default {
 .book-pulse {
   width: 60px;
   height: 90px;
-  background: #d7ccc8;
-  border-radius: 3px;
+  background: #e6f0fd;
+  border-radius: 4px;
   animation: pulse 1.5s infinite ease-in-out;
   margin-bottom: 20px;
 }
@@ -513,7 +440,7 @@ export default {
 .no-results {
   text-align: center;
   padding: 40px 0;
-  color: #5d4037;
+  color: #4a89dc;
 }
 
 .empty-shelf-animation {
@@ -528,9 +455,9 @@ export default {
 .book-shimmer {
   width: 60px;
   height: 80px;
-  background: linear-gradient(90deg, #efebe9 25%, #d7ccc8 50%, #efebe9 75%);
+  background: linear-gradient(90deg, #e6f0fd 25%, #d4e1f8 50%, #e6f0fd 75%);
   background-size: 200% 100%;
-  border-radius: 3px;
+  border-radius: 4px;
   animation: shimmer 2s infinite linear;
 }
 
@@ -562,26 +489,29 @@ export default {
 .book-card-single {
   display: flex;
   background: white;
-  border-radius: 5px;
+  border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
   transition: all 0.3s ease;
-  height: 320px;
-  border-left: 4px solid #8d6e63;
+  height: 240px;
+  border-left: 4px solid #4a89dc;
   position: relative;
 }
 
 .book-card-single:hover {
   transform: translateY(-3px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
 }
 
 .book-cover-container {
   position: relative;
   flex: 0 0 160px;
   min-height: 220px;
-  background: #efebe9;
   overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f9ff;
 }
 
 .book-cover-placeholder {
@@ -590,47 +520,45 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #d7ccc8 0%, #bcaaa4 100%);
+  background: linear-gradient(135deg, #e6f0fd 0%, #d4e1f8 100%);
 }
 
 .cover-text {
   font-size: 2rem;
-  color: #fff;
+  color: #4a89dc;
   font-weight: bold;
-  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .book-cover {
-  width: 100%;
-  height: 100%;
+  width: 95%;
+  height: 95%;
   object-fit: cover;
   object-position: center;
-  transition: transform 0.3s ease;
-}
-
-.book-card-single:hover .book-cover {
-  transform: scale(1.05);
+  border: 1px solid #e0e6ed;
+  border-radius: 2px;
 }
 
 .availability-badge {
   position: absolute;
   top: 10px;
-  right: 10px;
-  padding: 4px 8px;
+  right: 5px;
+  padding: 4px 10px;
   border-radius: 12px;
   font-size: 12px;
   font-weight: bold;
   color: white;
-  background: #d32f2f;
+  background: #ff5e57;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .availability-badge.available {
-  background: #388e3c;
+  background: #48cfad;
 }
 
 .book-details {
   flex: 1;
-  padding: 15px;
+  padding: 15px 20px;
   display: flex;
   flex-direction: column;
   min-width: 0;
@@ -638,95 +566,56 @@ export default {
 
 .book-title {
   margin: 0 0 8px 0;
-  font-size: 1.2rem;
-  color: #3e2723;
-  border-bottom: 1px solid #d7ccc8;
-  padding-bottom: 5px;
+  font-size: 1.4rem;
+  color: #2c3e50;
+  border-bottom: 1px solid #e0e6ed;
+  padding-bottom: 8px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-weight: 600;
 }
 
 .book-author, .book-isbn, .book-category, .book-publish-date, .book-copies {
-  margin: 3px 0;
-  font-size: 14px;
-  color: #5d4037;
+  margin: 4px 0;
+  font-size: 15px;
+  color: #5d6d7e;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .book-description {
-  margin: 10px 0;
-  font-size: 13px;
-  color: #4e342e;
+  margin: 8px 0;
+  font-size: 15px;
+  color: #5d6d7e;
   line-height: 1.5;
   flex-grow: 1;
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
-  line-clamp: 3;
-  -webkit-box-orient: vertical;
-  text-overflow: ellipsis;
-}
-
-.book-actions {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 10px;
+  white-space: normal;        
+  overflow-wrap: break-word;  
 }
 
 .look-button {
-  padding: 8px 16px;
-  background: #5d4037;
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 10;
+  padding: 6px 16px;         
+  font-size: 15px;            
+  border-radius: 6px;        
+  background-color: #4a89dc;
   color: white;
   border: none;
-  border-radius: 3px;
   cursor: pointer;
-  transition: background 0.3s;
-  font-size: 14px;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  font-weight: 500;
 }
 
-.look-button:hover:not(:disabled) {
-  background: #3e2723;
-}
-
-.look-button:disabled {
-  background: #a1887f;
-  cursor: not-allowed;
-}
-
-.admin-actions {
-  display: flex;
-  gap: 6px;
-}
-
-.edit-button, .delete-button {
-  padding: 8px 12px;
-  border: none;
-  border-radius: 3px;
-  font-size: 13px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.edit-button {
-  background: #8d6e63;
-  color: white;
-}
-
-.edit-button:hover {
-  background: #6d4c41;
-}
-
-.delete-button {
-  background: #5d4037;
-  color: white;
-}
-
-.delete-button:hover {
-  background: #3e2723;
+.look-button:hover {
+  background-color: #3b7dd8;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
 }
 
 /* 分页样式 */
@@ -739,40 +628,50 @@ export default {
 }
 
 .page-button {
-  padding: 8px 12px;
-  background: #8d6e63;
+  padding: 8px 16px;
+  background: #4a89dc;
   color: white;
   border: none;
-  border-radius: 3px;
+  border-radius: 4px;
   cursor: pointer;
-  transition: background 0.3s;
+  transition: all 0.3s ease;
   font-size: 14px;
+  font-weight: 500;
 }
 
 .page-button:hover:not(:disabled) {
-  background: #6d4c41;
+  background: #3b7dd8;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .page-button:disabled {
-  background: #bcaaa4;
+  background: #b8c2cc;
   cursor: not-allowed;
+  transform: none;
 }
 
-.page-number {
-  padding: 6px 12px;
-  cursor: pointer;
-  border-radius: 3px;
+.page-info {
+  margin: 0 10px;
+  color: #5d6d7e;
   font-size: 14px;
-  color: #5d4037;
 }
 
-.page-number:hover:not(.active) {
-  background: #d7ccc8;
+.jump-input {
+  width: 60px;
+  padding: 8px;
+  border: 1px solid #e0e6ed;
+  border-radius: 4px;
+  font-size: 14px;
+  outline: none;
+  text-align: center;
+  color: #3c4858;
+  transition: all 0.3s ease;
 }
 
-.page-number.active {
-  background: #5d4037;
-  color: white;
+.jump-input:focus {
+  border-color: #4a89dc;
+  box-shadow: 0 0 0 2px rgba(74, 137, 220, 0.2);
 }
 
 /* 过渡动画 */
@@ -793,15 +692,17 @@ export default {
 /* 响应式设计 */
 @media (max-width: 768px) {
   .library-container {
-    padding: 10px;
+    padding: 15px;
+    max-width: 95%;
   }
   
   .library-header {
-    padding: 15px;
+    padding: 20px;
   }
   
   .book-card-single {
     flex-direction: column;
+    height: auto;
   }
   
   .book-cover-container {
@@ -821,10 +722,6 @@ export default {
     width: 100%;
   }
   
-  .add-book-button {
-    width: 100%;
-  }
-  
   .search-box {
     flex-direction: column;
   }
@@ -835,7 +732,11 @@ export default {
   
   .search-type {
     border-right: none;
-    border-bottom: 1px solid #bcaaa4;
+    border-bottom: 1px solid #d4e1f8;
+  }
+  
+  .pagination {
+    flex-wrap: wrap;
   }
 }
 </style>

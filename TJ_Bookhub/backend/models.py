@@ -11,10 +11,10 @@ class User(db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
-    password = db.Column(db.String(120), nullable=False)
+    password = db.Column(db.String(256), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     is_admin = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=datetime.now())
+    created_at = db.Column(db.DateTime, default=datetime.now)
 
 
 class UserInfo(db.Model):
@@ -49,6 +49,24 @@ class Book(db.Model):
     rating = db.Column(db.Float, default=0.0)
     rating_counts = db.Column(db.Integer, default=0)
 
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'title': self.title,
+            'author': self.author,
+            'isbn': self.isbn,
+            'publisher': self.publisher,
+            'publish_date': self.publish_date,
+            'total_copies': self.total_copies,
+            'available_copies': self.available_copies,
+            'category': self.category_id,
+            'description': self.description,
+            'cover_image': self.cover_image,
+            'borrow_counts': self.borrow_counts,
+            'rating': self.rating,
+            'rating_counts': self.rating_counts
+        }
+
 
 class CategoryBorrowData(db.Model):
     __tablename__ = 'category_borrow_data'
@@ -64,9 +82,9 @@ class BorrowRecord(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     book_id = db.Column(db.Integer, db.ForeignKey('books.id'), nullable=False)
-    borrow_date = db.Column(db.DateTime, default=datetime.now())
+    borrow_date = db.Column(db.DateTime, default=datetime.now)
     due_date = db.Column(db.DateTime, nullable=False)
-    return_date = db.Column(db.DateTime, default=datetime.now())
+    return_date = db.Column(db.DateTime, default=datetime.now)
     status = db.Column(Enum('borrowed', 'finished', 'overdued', name='record_status'), default='borrowed')
 
 
@@ -76,9 +94,8 @@ class Comment(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     book_id = db.Column(db.Integer, db.ForeignKey('books.id'), nullable=False)
     content = db.Column(db.Text, nullable=False)
-    rating = db.Column(db.Integer, nullable=False)
-    created_time = db.Column(db.DateTime, default=datetime.now(), nullable=False)
-    
+    rating = db.Column(db.Float, nullable=False)
+    created_time = db.Column(db.DateTime, default=datetime.now, nullable=False)
 
 
 # ***************************通知模型***************************
@@ -88,7 +105,7 @@ class Noitce(db.Model):
     admin_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     title = db.Column(db.String(200), nullable=False)
     content = db.Column(db.Text, nullable=False)
-    created_time = db.Column(db.DateTime, default=datetime.now(), nullable=False)
+    created_time = db.Column(db.DateTime, default=datetime.now, nullable=False)
 
 
 
@@ -111,8 +128,8 @@ class Event(db.Model):
     title = db.Column(db.String(200), nullable=False)
     type_id = db.Column(db.Integer, db.ForeignKey('event_categories.id'))
     image = db.Column(db.String(200))  # 活动宣传图片的地址
-    start_time = db.Column(db.DateTime, default = datetime.now())
-    end_time = db.Column(db.DateTime, default = datetime.now() + timedelta(days=1))
+    start_time = db.Column(db.DateTime, default = datetime.now)
+    end_time = db.Column(db.DateTime, default = lambda: datetime.now() + timedelta(days=1))
     location = db.Column(db.String(200))
     brief = db.Column(db.String(500))   # 活动简介
     organizer = db.Column(db.String(200))  # 主办方
@@ -150,5 +167,5 @@ class EventParticipationRecord(db.Model):
     event_id = db.Column(db.Integer, db.ForeignKey('events.id'))
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     feedback = db.Column(db.Text)
-    feedback_time = db.Column(db.DateTime, default=datetime.now())
+    feedback_time = db.Column(db.DateTime, default=datetime.now)
 

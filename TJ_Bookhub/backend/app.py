@@ -11,7 +11,7 @@ r = redis.StrictRedis(host='localhost', port=6379, db=0, decode_responses=True) 
 
 def create_app():
     app = Flask(__name__)
-    # 数据库配置
+    # 配置
     app.config.from_object(Config)
     # 初始化扩展
     db.init_app(app)
