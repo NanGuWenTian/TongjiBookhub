@@ -60,6 +60,10 @@ const onSuccess = async () => {
   ElMessage.success('登录成功！');
   localStorage.setItem('access_token', result.data.access_token);
   localStorage.setItem('refresh_token', result.data.refresh_token);
+  if (result.data.is_admin) {
+    router.push('/admin');
+    return;
+  }
   router.push('/index');
 };
 

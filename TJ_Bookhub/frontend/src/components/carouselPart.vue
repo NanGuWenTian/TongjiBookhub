@@ -12,7 +12,7 @@
           <h3>{{ item.title }}</h3>
           <p>{{ item.brief }}</p>
           <div class="event-meta">
-            <span>{{ item.start_time }} - {{ item.end_time }}</span>
+            <span>{{ formatDateTime(item.start_time) }} - {{ formatDateTime(item.end_time) }}</span>
             <span>{{ item.location }}</span>
           </div>
         </div>
@@ -45,6 +45,19 @@
 
 <script setup>
   import { ref, onMounted, toRefs} from 'vue';
+  // 格式化日期时间的函数
+  const formatDateTime = (dateTime) => {
+    const date = new Date(dateTime);
+    return date.toLocaleString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  // 这里是之前遇到的bug2：子组件中的对象，只有改成ref类，才能再刷新后重新获得数据！
   const props = defineProps({
     events: {
       type: Array,
@@ -109,7 +122,7 @@
   .carousel {
     position: relative;
     width: 100%;
-    height: 540px;
+    height: 450px;
     overflow: hidden;
     border-radius: 8px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);

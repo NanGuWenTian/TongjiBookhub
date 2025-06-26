@@ -1,47 +1,44 @@
 <template>
   <div class="library-container">
     <div class="library-content">
-      <div class="library-header">
-        <div class="title-container">
-          <h1 class="library-title">📚 图书检索</h1>
-          <p class="library-subtitle">畅游知识海洋</p>
+      <div class="title-container">
+        <h1 class="library-title">图书检索</h1>
+      </div>
+      <div class="search-container">
+        <div class="search-box">
+          <select v-model="searchType" class="search-type">
+            <option value="title">书名</option>
+            <option value="author">作者</option>
+            <option value="isbn">ISBN</option>
+            <option value="category">分类</option>
+          </select>
+          <input 
+            v-model="searchQuery" 
+            class="search-input" 
+            :placeholder="`按${searchTypePlaceholder}搜索`"
+            @keyup.enter="searchBooks"
+          >
+          <button class="search-button" @click="searchBooks">
+            <el-icon class="search-icon"><Search /></el-icon>
+          </button>
         </div>
-        <div class="search-container">
-          <div class="search-box">
-            <select v-model="searchType" class="search-type">
-              <option value="title">书名</option>
-              <option value="author">作者</option>
-              <option value="isbn">ISBN</option>
-              <option value="category">分类</option>
-            </select>
-            <input 
-              v-model="searchQuery" 
-              class="search-input" 
-              :placeholder="`按${searchTypePlaceholder}搜索`"
-              @keyup.enter="searchBooks"
+
+        <div class="action-row">
+          <div class="sort-container">
+            <label for="sort-select" class="sort-label">排序方式:</label>
+            <select 
+              id="sort-select"
+              v-model="sortOption" 
+              class="sort-select"
+              @change="sortBooks"
             >
-            <button class="search-button" @click="searchBooks">
-              <span class="search-icon">搜索</span>
-            </button>
-          </div>
-          
-          <div class="action-row">
-            <div class="sort-container">
-              <label for="sort-select" class="sort-label">排序方式:</label>
-              <select 
-                id="sort-select"
-                v-model="sortOption" 
-                class="sort-select"
-                @change="sortBooks"
-              >
-                <option value="title_asc">书名 (A-Z)</option>
-                <option value="title_desc">书名 (Z-A)</option>
-                <option value="author_asc">作者 (A-Z)</option>
-                <option value="author_desc">作者 (Z-A)</option>
-                <option value="publish_date_desc">出版日期 (最新)</option>
-                <option value="publish_date_asc">出版日期 (最旧)</option>
-              </select>
-            </div>
+              <option value="title_asc">书名 (A-Z)</option>
+              <option value="title_desc">书名 (Z-A)</option>
+              <option value="author_asc">作者 (A-Z)</option>
+              <option value="author_desc">作者 (Z-A)</option>
+              <option value="publish_date_desc">出版日期 (最新)</option>
+              <option value="publish_date_asc">出版日期 (最旧)</option>
+            </select>
           </div>
         </div>
       </div>
@@ -141,6 +138,7 @@ import { ref, computed, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { getBooks } from '@/api/books'
 import { ElMessage } from 'element-plus'
+import { Search } from '@element-plus/icons-vue'
 
 const router = useRouter()
 
@@ -270,13 +268,16 @@ onMounted(() => {
 /* 基础样式 */
 .library-container {
   font-family: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-  max-width: 80%;
+  width: 80%;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
-  color: #333;
-  background-color: #f8fafc;
+  color:#2c3e50;
+  background-color: #f5f9ff;
   min-height: 100vh;
   box-shadow: 0 0 15px rgba(0, 0, 0, 0.05);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(74, 137, 220, 0.1);
 }
 
 .library-content {
@@ -284,34 +285,21 @@ onMounted(() => {
 }
 
 /* 顶部标题和搜索栏 */
-.library-header {
-  background: linear-gradient(135deg, #4a89dc 0%, #3b7dd8 100%);
-  padding: 25px 30px;
-  border-radius: 8px;
-  margin-bottom: 25px;
-  color: #fff;
-  box-shadow: 0 4px 12px rgba(74, 137, 220, 0.2);
-}
-
 .title-container {
   text-align: center;
   margin-bottom: 20px;
 }
 
 .library-title {
-  margin: 0;
-  font-size: 2.2rem;
-  color: #fff;
-  letter-spacing: 1px;
+  margin: 50px 0px;
+  font-size: 2.6rem;
+  background: linear-gradient(135deg, #4a89dc 0%, #3b7dd8 100%);
+  background-clip: text; 
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: 2px;
   font-weight: 600;
   text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.library-subtitle {
-  margin: 8px 0 0;
-  font-size: 1rem;
-  color: rgba(255, 255, 255, 0.9);
-  font-style: italic;
 }
 
 /* 搜索框样式 */
@@ -371,7 +359,7 @@ onMounted(() => {
 }
 
 .search-icon {
-  font-size: 16px;
+  font-size: 18px;
 }
 
 /* 操作行样式 */
@@ -379,6 +367,7 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  
 }
 
 .sort-container {
@@ -388,9 +377,10 @@ onMounted(() => {
 }
 
 .sort-label {
-  margin-right: 8px;
+  margin-left: 18px;
+  margin-right: 13px;
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(0, 0, 0, 0.9);
 }
 
 .sort-select {

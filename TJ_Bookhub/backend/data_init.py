@@ -2,21 +2,18 @@ from models import db, User, UserInfo, BookCategory, Book, CategoryBorrowData, B
 from config import Config
 from flask import Flask
 from datetime import datetime, timedelta
+import random # 用于随机生成数据
 
 app = Flask(__name__)
 app.config.from_object(Config)
 db.init_app(app)
 
 # 添加用户
-def add_user():
+def add_user(user):
     with app.app_context():
-        user = User(username='代文波', 
-                    password='123456', 
-                    email='2251557@tongji.edu.cn',
-                    is_admin=False,
-                    created_at=datetime.now())
         db.session.add(user)
         db.session.commit()
+        print(f"用户{user.username}添加成功！")
         return user.id
 
 # 感觉下面的数据表暂时没啥用
@@ -126,23 +123,24 @@ def add_event(event_data):
         return event.id
 
 # 添加活动参与记录
-def add_event_participation_record(event_id, user_id):
+def add_event_participation_record(record):
     with app.app_context():
-        record = EventParticipationRecord(
-            event_id=event_id,
-            user_id=user_id,
-            feedback='这次分享会非常有收获，学到了很多新的知识。',
-            feedback_time=datetime.now()
-        )
         db.session.add(record)
         db.session.commit()
+        print(f"活动参与记录——{record.id}已插入成功！")
+        return record.id
 
 
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
     # 添加用户
-    # user_id = add_user()
+    # user = User(username='小王', 
+    #             password='123456', 
+    #             email='hyacinth.529@qq.com',
+    #             is_admin=False,
+    #             created_at=datetime.now())
+    # user_id = add_user(user)
 
     # 添加用户信息
     # add_user_info(user_id)
@@ -192,4 +190,21 @@ if __name__ == '__main__':
     # event_id = add_event(event_data)
 
     # 添加活动参与记录
-    # add_event_participation_record(event_id, user_id)
+    # event_ids = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]
+    # user_ids = [1,2,3,4,5,6]
+    # feedbacks = ['活动组织有序，内容丰富，参与体验感强!','这次分享会非常有收获，学到了很多新的知识!','流程顺畅，主题鲜明，深受参与者喜爱!',
+    #              '环节设计巧妙，干货十足，实用性强!','氛围热烈，沟通充分，效果超出预期!','现场秩序井然，交流氛围融洽，好评!',
+    #              '讲师专业，内容精彩，收获满满!','现场氛围活跃，流程衔接顺畅，体验感极佳！']
+    # times = [datetime(2025, 6, 25, 14, 30),datetime(2025, 6, 21, 16, 0),datetime(2025, 6, 22, 10, 10),datetime(2025, 6, 23, 11, 15),
+    #          datetime(2025, 6, 24, 17, 25),datetime(2025, 6, 26, 12, 55),datetime(2025, 6, 25, 10, 5)]
+    
+    # # 下面依次插入上述内容-每个人-每个活动都要发言！
+    # for i in range(len(event_ids)):
+    #     for j in range(len(user_ids)):
+    #         record = EventParticipationRecord(
+    #                     event_id=event_ids[i],
+    #                     user_id=user_ids[j],
+    #                     feedback=feedbacks[random.randint(0, len(feedbacks)-1)],
+    #                     feedback_time=times[random.randint(0, len(times)-1)])
+    #         add_event_participation_record(record)
+    # print("所有活动记录均已插入完毕！")

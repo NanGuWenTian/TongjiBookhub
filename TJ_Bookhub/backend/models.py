@@ -16,12 +16,37 @@ class User(db.Model):
     is_admin = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.now)
 
+    user_info = db.relationship(
+        'UserInfo',
+        backref='user',
+        cascade='all, delete',
+        passive_deletes=True,
+        uselist=False
+    )
+
+    comments = db.relationship(
+        'Comment',
+        backref='user',
+        cascade='all, delete',
+        passive_deletes=True
+    )
+
+    borrow_records = db.relationship(
+        'BorrowRecord',
+        backref='user',
+        cascade='all, delete',
+        passive_deletes=True
+    )
+
 
 class UserInfo(db.Model):
     __tablename__ = 'user_info'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    nickname = db.Column(db.String(50))
+    avatar = db.Column(db.String(255))
     phone = db.Column(db.String(20))
+    bio = db.Column(db.Text)
 
 
 
@@ -30,6 +55,21 @@ class BookCategory(db.Model):
     __tablename__ = 'book_categories'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.String(100), nullable=False)
+
+    books = db.relationship(
+        'Book',
+        backref='category',
+        cascade='all, delete',
+        passive_deletes=True
+    )
+
+    category_borrow_data = db.relationship(
+        'CategoryBorrowData',
+        backref='category',
+        cascade='all, delete',
+        passive_deletes=True
+    )
+
 
 
 class Book(db.Model):
@@ -42,12 +82,26 @@ class Book(db.Model):
     publish_date = db.Column(db.Date)
     total_copies = db.Column(db.Integer, default=1)
     available_copies = db.Column(db.Integer, default=1)
-    category_id = db.Column(db.Integer, db.ForeignKey('book_categories.id'), nullable=False)
+    category_id = db.Column(db.Integer, db.ForeignKey('book_categories.id', ondelete='CASCADE'), nullable=False)
     description = db.Column(db.Text)
     cover_image = db.Column(db.String(200))
     borrow_counts = db.Column(db.Integer, default=0)
     rating = db.Column(db.Float, default=0.0)
     rating_counts = db.Column(db.Integer, default=0)
+
+    borrow_records = db.relationship(
+        'BorrowRecord',
+        backref='book',
+        cascade='all, delete',
+        passive_deletes=True
+    )
+
+    comments = db.relationship(
+        'Comment',
+        backref='book',
+        cascade='all, delete',
+        passive_deletes=True
+    )
 
     def to_dict(self):
         return {
@@ -71,7 +125,7 @@ class Book(db.Model):
 class CategoryBorrowData(db.Model):
     __tablename__ = 'category_borrow_data'
     id = db.Column(db.Integer, primary_key=True,autoincrement=True)
-    category_id = db.Column(db.Integer, db.ForeignKey('book_categories.id')) #书籍类别
+    category_id = db.Column(db.Integer, db.ForeignKey('book_categories.id', ondelete='CASCADE')) #书籍类别
     borrow_counts = db.Column(db.Integer, default=0) 
     year = db.Column(db.Integer)
     month = db.Column(db.Integer) 
@@ -80,8 +134,8 @@ class CategoryBorrowData(db.Model):
 class BorrowRecord(db.Model):
     __tablename__ = 'borrow_records'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    book_id = db.Column(db.Integer, db.ForeignKey('books.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    book_id = db.Column(db.Integer, db.ForeignKey('books.id', ondelete='CASCADE'), nullable=False)
     borrow_date = db.Column(db.DateTime, default=datetime.now)
     due_date = db.Column(db.DateTime, nullable=False)
     return_date = db.Column(db.DateTime, default=datetime.now)
@@ -91,8 +145,8 @@ class BorrowRecord(db.Model):
 class Comment(db.Model):
     __tablename__ = 'comments'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    book_id = db.Column(db.Integer, db.ForeignKey('books.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    book_id = db.Column(db.Integer, db.ForeignKey('books.id', ondelete='CASCADE'), nullable=False)
     content = db.Column(db.Text, nullable=False)
     rating = db.Column(db.Float, nullable=False)
     created_time = db.Column(db.DateTime, default=datetime.now, nullable=False)

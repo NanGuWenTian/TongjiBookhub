@@ -72,7 +72,7 @@
   .chart-wrapper {
     position: relative;
     width: 100%;
-    height: 400px;
+    height: 350px;
     canvas {
       padding-top: 5px;
       width: 100%;

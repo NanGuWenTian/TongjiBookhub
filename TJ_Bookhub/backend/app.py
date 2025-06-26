@@ -27,18 +27,27 @@ def create_app():
     # 注册蓝图
     from routes.books import books_bp
     app.register_blueprint(books_bp)
+
     from routes.comments import comments_bp
     app.register_blueprint(comments_bp)
+
     from routes.event import event_bp
     app.register_blueprint(event_bp)
+
     from routes.auth import authentication
     app.register_blueprint(authentication)
+
     from routes.event_category import event_category_bp
     app.register_blueprint(event_category_bp)
+
     from routes.event_participation_record import event_participation_record_bp
     app.register_blueprint(event_participation_record_bp)
 
+    from  routes.book_category import book_category_bp
+    app.register_blueprint(book_category_bp)
 
+    from routes.user import user_bp
+    app.register_blueprint(user_bp)
 
     return app
 

@@ -446,6 +446,7 @@ const backIconSvg = `
 <style scoped>
 .book-detail-container {
   max-width: 1000px;
+  width: 90%;
   margin: 0 auto;
   padding: 20px;
   color: #2c3e50;

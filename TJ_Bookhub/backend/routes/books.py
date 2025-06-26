@@ -189,12 +189,39 @@ def return_book(id):
 
 
 
+@books_bp.route('/admin', methods=['GET'])
+def get_books_admin():
+    # 获取图书列表（管理员）
+    query = Book.query
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 8, type=int)
+    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
 
-@books_bp.route('', methods=['POST'])
+    book_items = []
+    for book in pagination.items:
+        book_dict = book.to_dict()
+        book_items.append(book_dict)
+
+    return jsonify({
+        'book_items': book_items,
+        'total': pagination.total,
+        'pages': pagination.pages,
+        'page': page,
+        'per_page': per_page
+    })
+
+
+@books_bp.route('/admin', methods=['POST'])
 # @admin_required
-def add_book():
+def add_book_admin():
     # 添加图书（管理员）
     data = request.get_json()
+
+    required_fields = ['title']
+    for field in required_fields:
+        if field not in data:
+            return jsonify({"error": f"Missing required field: {field}"}), 400
+        
     book = Book(
         title=data['title'],
         author=data['author'],
@@ -202,34 +229,67 @@ def add_book():
         publisher=data.get('publisher'),
         publish_date=data.get('publish_date'),
         total_copies=data.get('total_copies', 1),
-        available_copies=data.get('available_copies', 1),
-        category=data.get('category'),
-        description=data.get('description')
+        available_copies=data.get('total_copies', 1),
+        category_id=data.get('category_id'),
+        description=data.get('description'),
+        cover_image=data.get('cover_image'),
+        rating=data.get('rating', 0.0),
+        rating_counts=data.get('rating_counts', 0),
+        borrow_counts=data.get('borrow_counts', 0)
     )
     db.session.add(book)
-    db.session.commit()
-    return jsonify(book.to_dict()), 201
+    try:
+        db.session.commit()
+        return jsonify({"message": "书籍添加成功", "id": book.id}), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": f"书籍添加时出错: {str(e)}"}), 500
 
-@books_bp.route('/<int:id>', methods=['PUT'])
+
+@books_bp.route('/admin/<int:id>', methods=['PUT'])
 # @admin_required
 def update_book(id):
     # 更新图书（管理员）
     book = Book.query.get_or_404(id)
     data = request.get_json()
-    
-    book.title = data.get('title', book.title)
-    book.author = data.get('author', book.author)
-    # 更新其他字段...
-    
-    db.session.commit()
-    return jsonify(book.to_dict())
 
-@books_bp.route('/<int:id>', methods=['DELETE'])
+    for field in ['title', 'author', 'isbn', 'publisher', 'category_id', 'description', 'cover_image']:
+        if field in data:
+            setattr(book, field, data[field])
+
+    if 'publish_date' in data:
+        try:
+            book.publish_date = datetime.fromisoformat(data['publish_date']).date()
+        except ValueError:
+            return jsonify({"error": "Invalid publish_date format. Use ISO format like 2025-06-30T14:00:00"}), 400
+
+    if 'total_copies' in data:
+        counts = data['total_copies'] - book.total_copies + book.available_copies
+        if counts < 0:
+            return jsonify({"error": "暂时无法削减该图书数目，等所有图书回收后再削减"}), 400
+        book.available_copies = counts
+        book.total_copies = data['total_copies']
+
+    try:
+        db.session.commit()
+        return jsonify({"message": "图书更新成功"})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": f"更新图书时出错: {str(e)}"}), 500
+
+
+
+@books_bp.route('/admin/<int:id>', methods=['DELETE'])
 # @admin_required
 def delete_book(id):
     # 删除图书（管理员）
     book = Book.query.get_or_404(id)
-    db.session.delete(book)
-    db.session.commit()
-    return jsonify({'message': 'Book deleted'}), 200
+
+    try:
+        db.session.delete(book)
+        db.session.commit()
+        return jsonify({"message": "活动删除成功"})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": f"删除活动时出错: {str(e)}"}), 500
 

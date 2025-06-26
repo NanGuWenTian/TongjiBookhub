@@ -86,7 +86,7 @@
   .chart-wrapper {
     position: relative;
     width: 100%;
-    height: 400px;
+    height: 350px;
     canvas{
       height: 100% !important;
       width: 100%;

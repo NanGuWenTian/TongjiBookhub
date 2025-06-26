@@ -1,15 +1,8 @@
 <template>
-  <div class="book-stats-view">
-    <!-- 顶部导航栏 -->
-    <nav class="top-nav">
-      <router-link to="/" class="active">书籍借阅统计</router-link>
-      <router-link to="/event">活动推荐</router-link>
-    </nav>
-    
+  <div class="book-stats-view">    
     <!-- 页面标题 -->
     <div class="page-header">
       <h1>图书馆书籍借阅统计</h1>
-      <!-- <p class="subtitle">探索读者的阅读偏好与趋势</p> -->
     </div>
     
     <!-- 借阅统计图表 - 并排显示 -->
@@ -428,201 +421,206 @@ const selectedCategory = ref(1);
 
 <style scoped lang="scss">
 .book-stats-view {
-  max-width: 1400px;
+  max-width: 1100px;
+  width: 90%;
   margin: 0 auto;
-  padding: 2rem;
-  font-family: 'Noto Serif SC', serif;
-  color: #3a3226;
-  background-color: #f9f5eb;
-  font-size: 1.1rem;
-
-  .top-nav {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 2rem;
-    padding: 1rem 0;
-    background-color: #8d6e63;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-
-    a {
-      color: #f9f5eb;
-      text-decoration: none;
-      padding: 0.8rem 2rem;
-      margin: 0 0.5rem;
-      font-size: 1.2rem;
-      transition: all 0.3s ease;
-      border-radius: 4px;
-      font-weight: 500;
-
-      &:hover {
-        background-color: rgba(255, 255, 255, 0.2);
-      }
-
-      &.active {
-        background-color: #5d4037;
-      }
-    }
-  }
+  padding: 1.5rem;
+  font-family: 'Noto Sans SC', 'PingFang SC', sans-serif;
+  color: #2c3e50;
+  background-color: #f5f9ff;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(74, 137, 220, 0.1);
 
   .page-header {
     text-align: center;
-    margin-bottom: 3rem;
-    padding-bottom: 1.5rem;
-    border-bottom: 1px solid #d4c9b8;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #e6f0fd;
 
     h1 {
-      font-size: 2.8rem;
-      font-weight: 500;
-      color: #5a4a3a;
-      margin-bottom: 0.8rem;
+      font-size: 1.8rem;
+      font-weight: 600;
+      color: #2c3e50;
+      margin: 20px 0px;
+      background: linear-gradient(135deg, #4a89dc 0%, #3b7dd8 100%);
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
-  }
-
-  .subtitle {
-    font-size: 1.4rem;
-    color: #7a6b5a;
-    font-style: italic;
   }
 
   .section-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1.8rem;
+    margin-bottom: 1rem;
     padding-bottom: 0.8rem;
-    border-bottom: 1px solid #d4c9b8;
+    border-bottom: 1px solid #e6f0fd;
 
     h2 {
-      font-size: 2rem;
-      font-weight: 500;
-      color: #5a4a3a;
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: #4a89dc;
+      margin: 0;
     }
   }
 
   .dual-chart-container {
     display: flex;
-    gap: 2rem;
-    margin-bottom: 3rem;
-    // background-color: lightblue;
-    .pieChart{
-      width: 40%;
-      // border: 1px solid #e0d8c8;
-      // transition: none !important;
-    }
-    .barChart{
-      width: 55%;
-      // border: 1px solid #e0d8c8;
-    }
-    @media (max-width: 992px) {
-      flex-direction: column;
-      .pieChart{
-        width: 97%;
-      }
-      .barChart{
-        width: 97%;
+    gap: 1.2rem;
+    margin-bottom: 1.5rem;
+
+    .pieChart, .barChart {
+      background-color: #fff;
+      padding: 1rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(74, 137, 220, 0.1);
+      border: 1px solid #e6f0fd;
+      
+      h3 {
+        font-size: 1.1rem;
+        color: #4a89dc;
+        margin: 0 0 0.8rem;
+        text-align: center;
+        font-weight: 500;
       }
     }
-  }
 
-  .chart-half {
-    background-color: #fff;
-    padding: 10px ;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    border: 1px solid #e0d8c8;
-
-    h3 {
-      font-size: 30px;
-      color: #5a4a3a;
-      margin-bottom: 1.5rem;
-      text-align: center;
+    .pieChart {
+      width: 32%;
+    }
+    
+    .barChart {
+      width: 60%;
     }
 
-    .pie_chart{
-      display: flex;
+    @media (max-width: 768px) {
       flex-direction: column;
-      align-items: center;
-      width: 100%;
-    }
-    @media (max-width: 992px) {
-      width: 97%;
+      
+      .pieChart, .barChart {
+        width: 100%;
+      }
     }
   }
 
   .chart-container {
     background-color: #fff;
-    padding: 1.8rem;
+    padding: 1rem;
     border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    margin-bottom: 3rem;
-    border: 1px solid #e0d8c8;
+    box-shadow: 0 2px 10px rgba(74, 137, 220, 0.1);
+    margin-bottom: 1.5rem;
+    border: 1px solid #e6f0fd;
   }
 
   .category-selector {
     select {
-      padding: 0.6rem 1rem;
-      background-color: #e8e0d0;
-      border: 1px solid #d4c9b8;
-      border-radius: 4px;
-      color: #5a4a3a;
-      font-size: 1rem;
+      padding: 0.5rem 0.8rem;
+      background-color: #e6f0fd;
+      border: 1px solid #d4e1f8;
+      border-radius: 6px;
+      color: #2c3e50;
+      font-size: 0.9rem;
+      transition: all 0.3s ease;
+      
+      &:focus {
+        outline: none;
+        border-color: #4a89dc;
+        box-shadow: 0 0 0 2px rgba(74, 137, 220, 0.1);
+      }
     }
   }
 
   .chart-controls {
     display: flex;
-    gap: 1rem;
-  }
-
-  .control-select {
-    padding: 0.6rem 1rem;
-    background-color: #e8e0d0;
-    border: 1px solid #d4c9b8;
-    border-radius: 4px;
-    color: #5a4a3a;
-    font-size: 1rem;
+    gap: 0.8rem;
+    
+    .control-select {
+      padding: 0.5rem 0.8rem;
+      background-color: #e6f0fd;
+      border: 1px solid #d4e1f8;
+      border-radius: 6px;
+      color: #2c3e50;
+      font-size: 0.9rem;
+      transition: all 0.3s ease;
+      
+      &:focus {
+        outline: none;
+        border-color: #4a89dc;
+      }
+    }
   }
 
   .ranking-table {
     background-color: #fff;
-    padding: 1.8rem;
+    padding: 1rem;
     border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    margin-bottom: 3rem;
-    border: 1px solid #e0d8c8;
+    box-shadow: 0 2px 10px rgba(74, 137, 220, 0.1);
+    margin-bottom: 1.5rem;
+    border: 1px solid #e6f0fd;
+    overflow-x: auto;
 
     table {
       width: 100%;
       border-collapse: collapse;
+      min-width: 500px;
 
       th, td {
-        padding: 1rem;
+        padding: 0.8rem;
         text-align: center;
-        border-bottom: 1px solid #e0d8c8;
-        font-size: 1.1rem;
+        border-bottom: 1px solid #e6f0fd;
+        font-size: 0.9rem;
       }
 
       th {
-        background-color: #f5efe6;
-        color: #5a4a3a;
+        background-color: #f5f9ff;
+        color: #4a89dc;
         font-weight: 500;
       }
 
       tr:hover {
-        background-color: #f5efe6;
+        background-color: #f5f9ff;
       }
     }
   }
 
   .wordcloud-container {
     background-color: #fff;
-    padding: 1.8rem;
+    padding: 1rem;
     border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    border: 1px solid #e0d8c8;
+    box-shadow: 0 2px 10px rgba(74, 137, 220, 0.1);
+    border: 1px solid #e6f0fd;
     height: 400px;
   }
-}
 
+  /* 响应式设计 */
+  @media (max-width: 768px) {
+    width: 95%;
+    padding: 1rem;
+    
+    .section-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.8rem;
+    }
+    
+    .chart-controls {
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    
+    .ranking-table {
+      padding: 0.5rem;
+      
+      table {
+        th, td {
+          padding: 0.6rem;
+        }
+      }
+    }
+    
+    .wordcloud-container {
+      height: 300px;
+    }
+  }
+}
 </style>

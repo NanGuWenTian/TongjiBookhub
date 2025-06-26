@@ -43,6 +43,7 @@ def get_events():
     # 这里使用 SQLAlchemy 的 join 方法执行左外连接（isouter=True），将 Event 表和 EventCategory 表关联起来
 
     # 获得筛选条件
+    id = request.args.get('id')
     title = request.args.get('title')
     type_id = request.args.get('type_id')
     start_date = request.args.get('start_date')
@@ -51,6 +52,8 @@ def get_events():
     # 从里面读取participate_counts最大的
     # is_hoted = request.args.get('is_hoted')
 
+    if id:
+        query = query.filter(Event.id == id)
     if title:
         query = query.filter(Event.title.ilike(f'%{title}%'))
 
@@ -76,10 +79,6 @@ def get_events():
     if is_featured is not None: #is_featured = True or False 前端传值的时候需要注意！
         is_featured = is_featured.lower() == 'true'
         query = query.filter(Event.is_featured == is_featured)
-    # 下面这个比较新，暂时先把它归到外边 
-    # if is_hoted is not None: #is_hoted = True or False 前端传值的时候需要注意！
-    #     is_hoted = is_hoted.lower() == 'true'
-    #     query = query.order_by(Event.participate_counts.desc())
 
     # 分页（修正参数传递方式）
     page = request.args.get('page', 1, type=int)

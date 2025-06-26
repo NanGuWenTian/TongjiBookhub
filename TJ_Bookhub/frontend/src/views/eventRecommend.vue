@@ -1,24 +1,21 @@
 <template>
-    <div class="event-recommendation-view">
-      <!-- 顶部导航栏 -->
-      <nav class="top-nav">
-        <router-link to="/" >书籍借阅统计</router-link>
-        <router-link to="/event" class="active">活动推荐</router-link>
-      </nav>
-      
-      <!-- 页面标题 -->
-      <div class="page-header">
-        <h1>图书馆活动推荐</h1>
+  <div class="event-recommendation-view">
+    <!-- 特色活动轮播 -->
+    <section class="featured-events"> 
+        <div class="page-header">
+          <h1>图书馆活动推荐</h1>
+        </div>   
+      <div class="carousel-container">
+        <carouselPart :events="featuredEvents" @item-click="navigateToEventDetail" />
+      </div>
+    </section>
+    
+    <!-- 活动搜索区域 -->
+    <section class="all-events">
+      <div class="section-header">
+        <h2>活动搜索</h2>
       </div>
       
-      <!-- 特色活动轮播 -->
-      <section class="featured-events">     
-        <div class="carousel-container">
-          <carouselPart :events="featuredEvents" @item-click="navigateToEventDetail" />
-        </div>
-      </section>
-      
-      <!-- 活动搜索和筛选
       <section class="event-filter">
         <div class="search-box">
           <input 
@@ -37,93 +34,87 @@
             </option>
           </select>
         </div>
-      </section> -->
-      
-       <section class="all-events">
-          <div class="section-header">
-            <h2>活动搜索</h2>
-          </div>
-          <!-- 活动搜索和筛选 -->
-
-          <section class="event-filter">
-            <div class="search-box">
-              <input 
-                type="text" 
-                v-model="searchQuery" 
-                placeholder="搜索活动..." 
-                @keyup.enter="searchEvents"
-              >
-              <select v-model="selectedCategory" @change="filterEvents">
-                <option 
-                  v-for="category in eventCategories" 
-                  :key="category.id" 
-                  :value="category.id"
-                >
-                  {{ category.name }}
-                </option>
-              </select>
-        </div>
       </section>
 
-
-          <div class="event-grid">
-              <eventCard 
-                  v-for="event in filteredEvents" 
-                  :key="event.id" 
-                  :event="event" 
-                  @click="navigateToEventDetail(event.id)"
-              />
-          </div>
-          <!-- 添加分页按钮 -->
-          <div class="pagination">
-              <button @click="prevPage" :disabled="currentPage === 1">上一页</button>
-              <button @click="nextPage" :disabled="currentPage === totalPages">下一页</button>
-              <span>第 {{ currentPage }} 页，共 {{ totalPages }} 页</span>
-          </div>
-        </section>
+      <div class="event-grid">
+        <eventCard 
+          v-for="event in filteredEvents" 
+          :key="event.id" 
+          :event="event" 
+          @click="navigateToEventDetail(event.id)"
+        />
+      </div>
       
-      <section class="class-events">
-        <div class="section-header">
-          <h2>热门活动</h2>
-        </div>
-        <div class="class-events-container">
-          <pictureWall 
-            :items="hotedEvents" 
-          />
-        </div>
-      </section>
+      <div class="pagination">
+        <button @click="prevPage" :disabled="currentPage === 1">上一页</button>
+        <button @click="nextPage" :disabled="currentPage === totalPages">下一页</button>
+        <span>第 {{ currentPage }} 页，共 {{ totalPages }} 页</span>
+      </div>
+    </section>
+    
+    <!-- 热门活动 -->
+    <section class="class-events">
+      <div class="section-header">
+        <h2>热门活动</h2>
+      </div>
+      <div class="class-events-container">
+        <pictureWall 
+          :items="hotedEvents" 
+        />
+      </div>
+    </section>
 
-      <!-- 往期活动回顾 -->
-      <section class="past-events">
-        <div class="section-header">
-          <h2>往期活动回顾</h2>
-        </div>
-        
-        <div class="past-events-container">
-          <div class="past-events-details">
-            <div v-for="event in pastEvents" :key="event.id" class="past-event-item">
+    <!-- 往期活动回顾 - 美化后的布局 -->
+    <section class="past-events">
+      <div class="section-header">
+        <h2>往期活动回顾</h2>
+      </div>
+      
+      <div class="past-events-container">
+        <div 
+          v-for="event in pastEvents" 
+          :key="event.id" 
+          class="past-event-card"
+        >
+          <div class="event-details">
+            <div class="event-header">
               <h3>{{ event.title }}</h3>
-              <p><strong>主办方:</strong> {{ event.organizer }}</p>
-              <p><strong>主题:</strong> {{ event.theme }}</p>
-              <p><strong>时间:</strong> {{ event.date }}</p>
-              <p><strong>参与人数:</strong> {{ event.participants }}</p>
+              <div class="event-meta">
+                <span><i class="icon-calendar"></i> {{ event.date }}</span>
+                <span><i class="icon-users"></i> {{ event.participants }}人参与</span>
+              </div>
+            </div>
+            
+            <div class="event-content">
+              <p><strong>主办方：</strong>{{ event.organizer }}</p>
+              <p><strong>主题：</strong>{{ event.theme }}</p>
             </div>
           </div>
           
-          <div class="past-events-feedback">
-            <div v-for="event in pastEvents" :key="event.id" class="feedback-item">
-              <h3>{{ event.title }} - 读者反馈</h3>
-              <div v-for="(item, idx) in event.evaluations" :key="idx" class="evaluation">
-                <p class="user">{{ item.user }}:</p>
-                <p class="comment">"{{ item.comment }}"</p>
+          <div class="event-feedback">
+            <h4>读者反馈</h4>
+            <div class="feedback-container">
+              <div 
+                v-for="(item, idx) in event.evaluations" 
+                :key="idx" 
+                class="feedback-item"
+              >
+                <div class="user-avatar">
+                  <span>{{ item.user.charAt(0) }}</span>
+                </div>
+                <div class="feedback-content">
+                  <strong>{{ item.user }}：</strong>
+                  <p>"{{ item.comment }}"</p>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </section>
-    </div>
-  </template>
-  
+      </div>
+    </section>
+  </div>
+</template>
+
 <script setup>
   import { ref, computed,onMounted} from 'vue';
   import axios from 'axios';
@@ -131,20 +122,53 @@
   import eventCard from '@/components/eventCard.vue';
   import pictureWall from '@/components/pictureWall.vue';
 
-  // 特色活动数据，作为模拟，这里暂时没用
   const featuredEvents = ref([]);
   const allEvents = ref([]);
   const hotedEvents = ref([]);
 
-  const eventCategories = ref([
-      { id: 0, name: '所有类别' },
-      { id: 1, name: '书香雅集' },
-      { id: 2, name: '传统文化' },
-      { id: 3, name: '艺术展览' },
-      { id: 4, name: '创新实践' },
-      { id: 5, name: '艺术展览' }
-  ]);
-  const pastEvents = ref([]);
+  const eventCategories = ref([]);
+
+  // 这里仅是一个测试 
+  const pastEvents = ref([{
+    id: 1,
+    title: "Python数据分析工作坊",
+    organizer: "数据科学协会",
+    theme: "技术",
+    date: "2025-05-15",
+    participants: 56,
+    evaluations: [
+      {
+        user: "李明",
+        comment: "内容很实用，老师讲解清晰，收获很大"
+      },
+      {
+        user: "张华",
+        comment: "实践环节安排合理，希望下次增加深度学习内容"
+      }
+    ]
+  },
+  {
+    id: 2,
+    title: "科幻文学沙龙",
+    organizer: "文学爱好者俱乐部",
+    theme: "文化",
+    date: "2025-04-22",
+    participants: 32,
+    evaluations: [
+      {
+        user: "王芳",
+        comment: "讨论氛围热烈，分享的作品很有启发性"
+      },
+      {
+        user: "赵强",
+        comment: "希望能邀请更多知名作家参与"
+      },
+      {
+        user: "陈晨",
+        comment: "场地舒适，活动组织得很成功"
+      }
+    ]
+  }]);
 
   // 搜索和筛选功能
   const searchQuery = ref();
@@ -152,13 +176,29 @@
 
   // 分页相关状态
   const currentPage = ref(1);
-  const perPage = ref(8);
+  const perPage = ref(9);
   const totalPages = ref(1);
 
   const filteredEvents = computed(() => {
       return allEvents.value;
   });
 
+  //const 获取活动种类
+  const fetchEventCategories = async () => { 
+    try{
+      const response = await axios.get('/api/event_category');
+      //先初始化
+      eventCategories.value = [{ id: 0, name: '所有类别' }];
+      response.data.forEach((category) => {
+        eventCategories.value.push(category);
+      });
+
+      // 下面是测试信息
+      console.log('活动种类列表：', eventCategories.value); 
+    } catch (error) {
+      console.error('获取活动种类列表时出错：', error);
+    }
+  };
   // 获取活动列表
   const fetchEvents = async () => {
       try {
@@ -253,179 +293,334 @@
   };
 
   onMounted(() => {
+    fetchEventCategories();
     fetchEvents();
     getFeaturedEvents();
     getHotEvents();
   });
 </script>
   
-  <style scoped lang="scss">
-  .event-recommendation-view {
-    max-width: 1400px;
+<style scoped lang="scss">
+.event-recommendation-view {
+  width: 90%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.5rem;
+  font-family: 'Noto Sans SC', 'PingFang SC', sans-serif;
+  color: #2c3e50;
+  background-color: #f5f9ff;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(74, 137, 220, 0.1);
+
+  .page-header {
+    text-align: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #e6f0fd;
+    
+    h1 {
+      font-size: 2rem;
+      font-weight: 600;
+      color: #2c3e50;
+      margin: 0;
+      background: linear-gradient(135deg, #4a89dc 0%, #3b7dd8 100%);
+      background-clip: text; 
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+  }
+
+  .section-header {
+    margin-bottom: 1.2rem;
+    padding-bottom: 0.8rem;
+    border-bottom: 1px solid #e6f0fd;
+    
+    h2 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #4a89dc;
+      margin: 0;
+    }
+  }
+
+  .featured-events,
+  .all-events,
+  .class-events,
+  .past-events {
+    background-color: #fff;
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 12px rgba(74, 137, 220, 0.1);
+    border: 1px solid #e6f0fd;
+  }
+
+  .carousel-container {
     margin: 0 auto;
-    padding: 2rem;
-    font-family: 'Noto Serif SC', serif;
-    color: #3a3226;
-    background-color: #f9f5eb;
+    max-width: 1000px;
+  }
 
-    .top-nav {
-      display: flex;
-      justify-content: center;
-      margin-bottom: 2rem;
-      padding: 1rem 0;
-      background-color: #8d6e63;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  .event-filter {
+    margin-bottom: 1.5rem;
+  }
 
-      a {
-        color: #f9f5eb;
-        text-decoration: none;
-        padding: 0.8rem 2rem;
-        margin: 0 0.5rem;
-        font-size: 1.2rem;
-        transition: all 0.3s ease;
-        border-radius: 4px;
-        font-weight: 500;
+  .search-box {
+    display: flex;
+    gap: 1rem;
+    max-width: 1200px;
+    margin: 0 auto;
 
-        &:hover {
-          background-color: rgba(255, 255, 255, 0.2);
-        }
-
-        &.active {
-          background-color: #5d4037;
-        }
+    input {
+      flex: 1;
+      padding: 0.6rem 1rem;
+      border: 1px solid #e6f0fd;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      transition: all 0.3s ease;
+      background-color: #f5f9ff;
+      
+      &:focus {
+        outline: none;
+        border-color: #4a89dc;
+        box-shadow: 0 0 0 2px rgba(74, 137, 220, 0.1);
       }
     }
 
-    .page-header {
-      text-align: center;
-      margin-bottom: 3rem;
-      padding-bottom: 1.5rem;
-      border-bottom: 1px solid #d4c9b8;
-
-      h1 {
-        font-size: 2.5rem;
-        font-weight: 500;
-        color: #5a4a3a;
-        margin-bottom: 0.5rem;
+    select {
+      padding: 0.6rem;
+      border: 1px solid #e6f0fd;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      background-color: #f5f9ff;
+      transition: all 0.3s ease;
+      min-width: 150px;
+      
+      &:focus {
+        outline: none;
+        border-color: #4a89dc;
       }
     }
+  }
 
-    .subtitle {
-      font-size: 1.2rem;
-      color: #7a6b5a;
-      font-style: italic;
-    }
-
-    .section-header {
-      margin-bottom: 1.5rem;
-      padding-bottom: 0.5rem;
-      border-bottom: 1px solid #d4c9b8;
-
-      h2 {
-        font-size: 1.8rem;
-        font-weight: 500;
-        color: #5a4a3a;
-      }
-    }
-
-    .carousel-container {
-      margin-bottom: 3rem;
-    }
-
-    .event-filter {
-      margin-bottom: 2rem;
-    }
-
-    .search-box {
-      display: flex;
-      gap: 1rem;
-
-      input {
-        flex: 1;
-        padding: 0.75rem;
-        border: 1px solid #d4c9b8;
-        border-radius: 4px;
-        font-family: inherit;
-      }
-
-      select {
-        padding: 0.75rem;
-        border: 1px solid #d4c9b8;
-        border-radius: 4px;
-        font-family: inherit;
-        background-color: #fff;
-      }
-    }
-
-    .event-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 1.5rem;
-      margin-bottom: 3rem;
-    }
-    .pagination {
+  .event-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.2rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .pagination {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 1rem;
-    margin-top: 1rem;
-    }
-
-    .past-events-container {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 2rem;
-      background-color: #fff;
-      padding: 1.5rem;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-      border: 1px solid #e0d8c8;
-
-      .past-event-item {
-        margin-bottom: 1.5rem;
-        padding-bottom: 1.5rem;
-        border-bottom: 1px dashed #d4c9b8;
-
-        &:last-child {
-          border-bottom: none;
-        }
-
-        h3 {
-          color: #8d6e63;
-          margin-bottom: 0.5rem;
-        }
-
-        p {
-          margin: 0.25rem 0;
-        }
+    gap: 0.8rem;
+    margin-top: 1.5rem;
+    
+    button {
+      padding: 0.5rem 1rem;
+      background-color: #4a89dc;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 6px rgba(74, 137, 220, 0.2);
+      
+      &:hover:not(:disabled) {
+        background-color: #3b7dd8;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 10px rgba(74, 137, 220, 0.3);
       }
+      
+      &:disabled {
+        background-color: #b8c2cc;
+        cursor: not-allowed;
+        box-shadow: none;
+      }
+    }
+    
+    span {
+      font-size: 0.9rem;
+      color: #5d6d7e;
+    }
+  }
 
-      .feedback-item {
-        margin-bottom: 1.5rem;
+  /* 往期活动回顾样式 */
+  .past-events-container {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
 
-        h3 {
-          color: #8d6e63;
-          margin-bottom: 0.5rem;
-        }
+  .past-event-card {
+    display: flex;
+    flex-direction: column;
+    background: linear-gradient(to bottom, #f5f9ff, #e6f0fd);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(74, 137, 220, 0.1);
+    transition: all 0.3s ease;
+    border: 1px solid #e6f0fd;
+    
+    &:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 6px 16px rgba(74, 137, 220, 0.15);
+    }
+  }
 
-        .evaluation {
-          background-color: #f5efe6;
-          padding: 1rem;
-          border-radius: 4px;
-          margin-bottom: 1rem;
+  .event-details {
+    padding: 1.2rem;
+    border-bottom: 1px dashed #d4e1f8;
+  }
 
-          .user {
-            font-weight: 500;
-            margin: 0 0 0.25rem 0;
-          }
-
-          .comment {
-            margin: 0;
-            font-style: italic;
-          }
+  .event-header {
+    margin-bottom: 0.8rem;
+    
+    h3 {
+      color: #4a89dc;
+      margin: 0 0 0.5rem;
+      font-size: 1.2rem;
+      font-weight: 600;
+    }
+    
+    .event-meta {
+      display: flex;
+      gap: 1rem;
+      color: #8ba3c7;
+      font-size: 0.85rem;
+      
+      span {
+        display: flex;
+        align-items: center;
+        
+        i {
+          margin-right: 0.3rem;
+          font-size: 0.9rem;
         }
       }
     }
   }
-  </style>
+
+  .event-content {
+    p {
+      margin: 0.5rem 0;
+      font-size: 0.95rem;
+      line-height: 1.5;
+      color: #5d6d7e;
+      
+      strong {
+        color: #4a89dc;
+        font-weight: 500;
+      }
+    }
+  }
+
+  .event-feedback {
+    padding: 1.2rem;
+    
+    h4 {
+      color: #4a89dc;
+      margin: 0 0 1rem;
+      font-size: 1.1rem;
+      font-weight: 600;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid #e6f0fd;
+    }
+  }
+
+  .feedback-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+  }
+
+  .feedback-item {
+    display: flex;
+    gap: 0.8rem;
+    padding: 0.8rem;
+    background-color: rgba(255, 255, 255, 0.8);
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(74, 137, 220, 0.1);
+    transition: all 0.3s ease;
+    
+    &:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 4px 10px rgba(74, 137, 220, 0.15);
+    }
+  }
+
+  .user-avatar {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: #4a89dc;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+
+  .feedback-content {
+    flex: 1;
+    
+    strong {
+      color: #3b7dd8;
+      font-weight: 500;
+      font-size: 0.95rem;
+    }
+    
+    p {
+      margin: 0.3rem 0 0;
+      font-style: italic;
+      color: #5d6d7e;
+      font-size: 0.9rem;
+      line-height: 1.4;
+    }
+  }
+
+  .class-events-container {
+    margin-top: 1rem;
+  }
+
+  /* 响应式设计 */
+  @media (max-width: 768px) {
+    .event-recommendation-view {
+      width: 95%;
+      padding: 1rem;
+    }
+    
+    .search-box {
+      flex-direction: column;
+      gap: 0.8rem;
+      
+      select {
+        width: 100%;
+      }
+    }
+    
+    .event-grid {
+      grid-template-columns: 1fr;
+    }
+    
+    .pagination {
+      flex-wrap: wrap;
+    }
+    
+    .feedback-container {
+      grid-template-columns: 1fr;
+    }
+    
+    .page-header h1 {
+      font-size: 1.8rem;
+    }
+    
+    .section-header h2 {
+      font-size: 1.3rem;
+    }
+  }
+}
+</style>

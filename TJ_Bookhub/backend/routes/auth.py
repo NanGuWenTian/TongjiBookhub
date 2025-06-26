@@ -2,7 +2,7 @@ from flask import Blueprint, jsonify, request
 from flask_mail import Message
 from app import mail, r
 import random
-from models import db, User
+from models import db, User, UserInfo
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from utils.jwt import create_access_token, create_refresh_token, refresh_access_token
@@ -77,10 +77,19 @@ def register():
     # 保存到数据库
     try:
         db.session.add(user)
+        db.session.flush()  # 生成user.id但不提交
+        userInfo = UserInfo(
+            nickname=None,
+            phone=None,
+            avatar=None,
+            bio=None,
+            user_id=user.id
+        )
+        db.session.add(userInfo)
         db.session.commit()
     except Exception as e:
         db.session.rollback()
-        print('数据库错误:', e)  # 控制台输出
+        print('数据库错误:', e)
         return jsonify({'code': 500, 'msg': '数据库错误，请稍后重试'}), 500
 
     # 删除验证码，防止重复使用
