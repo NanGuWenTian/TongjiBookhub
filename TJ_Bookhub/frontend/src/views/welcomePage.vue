@@ -77,15 +77,15 @@
           <div class="contact-methods">
             <div class="contact-method">
               <i class="fas fa-envelope"></i>
-              <span>contact@tjbookhub.com</span>
+              <span>2251734@tongji.edu.cn</span>
             </div>
             <div class="contact-method">
               <i class="fas fa-phone"></i>
-              <span>123-456-7890</span>
+              <span>181-5419-7872</span>
             </div>
             <div class="contact-method">
               <i class="fas fa-map-marker-alt"></i>
-              <span>上海市杨浦区四平路1239号</span>
+              <span>上海市嘉定区曹安公路4800号</span>
             </div>
           </div>
         </div>
@@ -112,23 +112,23 @@ const showRegisterModal = ref(false);
 
 const teamMembers = ref([
   {
-    name: '代文波',
-    position: '创始人 & CEO',
+    name: '许刚',
+    position: '组长',
     avatar: require('@/assets/team1.jpg')
   },
   {
-    name: '许刚',
-    position: '首席技术官',
+    name: '代文波',
+    position: '组员',
     avatar: require('@/assets/team2.jpg')
   },
   {
-    name: '王芳',
-    position: '产品经理',
+    name: '胡沛荻',
+    position: '组员',
     avatar: require('@/assets/team3.jpg')
   },
   {
-    name: '赵强',
-    position: '用户体验设计师',
+    name: '樊明晨',
+    position: '组员',
     avatar: require('@/assets/team4.jpg')
   }
 ]);

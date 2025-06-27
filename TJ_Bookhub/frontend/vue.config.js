@@ -4,6 +4,7 @@ const Components = require('unplugin-vue-components/webpack')
 const { ElementPlusResolver } = require('unplugin-vue-components/resolvers')
 
 const webpack = require('webpack')
+const HtmlWebpackPlugin = require('html-webpack-plugin')
 
 module.exports = defineConfig({
   transpileDependencies: true,
@@ -19,7 +20,16 @@ module.exports = defineConfig({
       }
     }
   },
+  pages: {
+    index: {
+      entry: 'src/main.js',
+      template: 'public/index.html',
+      filename: 'index.html',
+      title: 'TJBookhub 智能图书管理系统'
+    }
+  },
   configureWebpack: {
+    
     plugins: [
       AutoImport({
         resolvers: [ElementPlusResolver()]
