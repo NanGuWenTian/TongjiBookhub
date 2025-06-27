@@ -21,8 +21,8 @@ def create_app():
     CORS(app)
 
     # 创建所有表（第一次运行用）
-    # with app.app_context():
-    #     db.create_all()
+    with app.app_context():
+        db.create_all()
 
     # 注册蓝图
     from routes.books import books_bp
@@ -49,6 +49,11 @@ def create_app():
     from routes.user import user_bp
     app.register_blueprint(user_bp)
 
+    from routes.borrow_records import borrow_records_bp
+    app.register_blueprint(borrow_records_bp)
+
+    from routes.reminders import reminders_bp
+    app.register_blueprint(reminders_bp)
     return app
 
 

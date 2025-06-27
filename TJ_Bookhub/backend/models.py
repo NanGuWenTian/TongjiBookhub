@@ -110,7 +110,7 @@ class Book(db.Model):
             'author': self.author,
             'isbn': self.isbn,
             'publisher': self.publisher,
-            'publish_date': self.publish_date,
+            'publish_date': self.publish_date.isoformat() if self.publish_date else None,
             'total_copies': self.total_copies,
             'available_copies': self.available_copies,
             'category': self.category_id,
@@ -160,6 +160,16 @@ class Noitce(db.Model):
     title = db.Column(db.String(200), nullable=False)
     content = db.Column(db.Text, nullable=False)
     created_time = db.Column(db.DateTime, default=datetime.now, nullable=False)
+
+
+class Reminder(db.Model):
+    __tablename__ = 'reminders'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    book_id = db.Column(db.Integer, db.ForeignKey('books.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    created_time = db.Column(db.Date, nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    is_read = db.Column(db.Boolean, default=False)
 
 
 

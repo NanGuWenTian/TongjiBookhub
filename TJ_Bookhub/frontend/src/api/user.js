@@ -1,5 +1,19 @@
 import request from '@/utils/request';
 
+
+export const getUserInfoBrief = async () => {
+  try {
+    const response = await request.get('/api/user/brief');
+    return response.data;
+  } catch (error) {
+    if (error.response) {
+      return error.response.data;
+    }
+    return { code: 500, msg: '网络错误' };
+  }
+}
+
+
 export const getUserInfo = async () => {
   try {
     const response = await request.get('/api/user');

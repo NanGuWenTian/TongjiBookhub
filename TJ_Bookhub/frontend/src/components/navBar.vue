@@ -34,25 +34,65 @@
 
       <div class="navigation-block notification-block">
         <section class="navigation-element navigation-notifications" style="position: relative;">
-          <div class="navigation-icon">
+          <div class="navigation-icon" @click="toggleReminderPanel">
             <el-icon><Bell /></el-icon>
-            <div class="badge"></div>
+            <div class="badge" v-if="hasUnread"></div>
           </div>
-          <div class="notifications-board">
-            <div class="notifications-board__title">通知</div>
-            <!-- 通知内容 -->
+          <div class="notifications-board" v-show="showReminderPanel" ref="reminderRef">
+            <div class="notifications-board__title">提醒</div>
+            <div class="reminder-columns">
+              <div class="reminder-column">
+                <h4>未读提醒</h4>
+                <div v-if="unreadReminders.length === 0" class="empty">暂无未读提醒</div>
+                <div v-for="reminder in unreadReminders" :key="reminder.id" class="reminder-item unread">
+                  <p class="reminder-content">{{ reminder.content }}</p>
+                  <div class="reminder-header">
+                    <span class="reminder-time">{{ reminder.created_time }}</span>
+                  </div>
+                  <el-button type="primary" size="small" @click="handleMarkAsRead(reminder.id)">标记为已读</el-button>
+                </div>
+              </div>
+
+              <div class="reminder-column">
+                <h4>已读提醒</h4>
+                <div v-if="readReminders.length === 0" class="empty">暂无已读提醒</div>
+                <div v-for="reminder in readReminders" :key="reminder.id" class="reminder-item read">
+                  <p class="reminder-content">{{ reminder.content }}</p>
+                  <div class="reminder-header">
+                    <span class="reminder-time">{{ reminder.created_time }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
       </div>
 
       <div class="navigation-block user-block">
-        <section class="navigation-element navigation-user-card-element logged" style="position: relative;">
-          <div class="navigation-icon" @click="goToUserCenter">
-            <div class="profile-header__avatar">
-              <div class="profile-header__avatar-letter">X</div>
+        <el-popover
+          placement="bottom-start"
+          width="220"
+          trigger="hover"
+          popper-class="user-popover"
+        >
+          <template #reference>
+            <div class="profile-header__avatar" style="cursor: pointer;">
+              <img
+                v-if="userInfo.avatar"
+                :src="userInfo.avatar"
+                alt="用户头像"
+                class="avatar-img"
+              />
+              <div v-else class="profile-header__avatar-letter">U</div>
             </div>
+          </template>
+
+          <div class="user-info-card">
+            <img :src="userInfo.avatar" alt="头像" class="user-info-card__avatar" />
+            <div class="user-info-card__name">{{ userInfo.username }}</div>
+            <div class="user-info-card__email">{{ userInfo.email }}</div>
           </div>
-        </section>
+        </el-popover>
       </div>
 
       <div class="navigation-block menu-block">
@@ -91,7 +131,11 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { ElMessage, ElNotification } from 'element-plus'
 import { Bell, Sunny, Moon, Menu, Search, User, Star, DataAnalysis } from '@element-plus/icons-vue'
+import { getUserInfoBrief } from '../api/user'
+import { getReminders, markReminderAsRead } from '@/api/reminders'
+import eventBus from '@/utils/eventBus'
 
 const router = useRouter()
 
@@ -99,10 +143,11 @@ const currentTheme = ref('light')
 const isMenuOpen = ref(false)
 const menuRef = ref(null)
 const menuButtonRef = ref(null)
-
-const goToUserCenter = () => {
-  router.push('/userCenter')
-}
+const userInfo = ref({
+  username: '',
+  email: '',
+  avatar: ''
+})
 
 const openNavigationMenu = () => {
   isMenuOpen.value = !isMenuOpen.value
@@ -131,7 +176,68 @@ const switchTheme = (mode) => {
   currentTheme.value = mode
 }
 
+const fetchUserProfile = async () => {
+  const result  = await getUserInfoBrief();
+  if (result.code !== 200) {
+    ElMessage.error(result.msg || '加载失败');
+    return;
+  }
+  userInfo.value.avatar = result.data.avatar + '?t=' + Date.now();
+  userInfo.value.username = result.data.username;
+  userInfo.value.email = result.data.email;
+}
+
+// const reminders = ref([])
+const readReminders = ref([])
+const unreadReminders = ref([])
+const showReminderPanel = ref(false)
+const hasUnread = ref(false)
+
+const toggleReminderPanel = () => {
+  console.log(showReminderPanel.value)
+  showReminderPanel.value = !showReminderPanel.value
+}
+
+const fetchReminders = async () => {
+  const result = await getReminders()
+  if (result.code === 200) {
+    unreadReminders.value = result.data.filter(item => !item.is_read)
+    readReminders.value = result.data.filter(item => item.is_read)
+    hasUnread.value = unreadReminders.value.length > 0
+  }
+  else{
+    ElMessage.error(result.msg || '提醒获取失败');
+  }
+}
+
+const handleMarkAsRead = async (id) => {
+  const res = await markReminderAsRead(id)
+  if (res.code === 200) {
+    const index = unreadReminders.value.findIndex(r => r.id === id)
+    if (index !== -1) {
+      const read = unreadReminders.value.splice(index, 1)[0]
+      read.is_read = true
+      readReminders.value.unshift(read)
+    }
+    hasUnread.value = unreadReminders.value.length > 0
+    ElNotification.success({
+      title: '成功',
+      message: '已标记为已读',
+      position: 'top-left'
+    })
+  }
+  else{
+    ElMessage.error(res.msg || '标记已读失败');
+  }
+}
+
 onMounted(() => {
+  fetchUserProfile();
+  fetchReminders()
+  eventBus.on('updated', () => {
+    fetchUserProfile()
+  })
+
   const saved = localStorage.getItem('theme')
   if (saved === 'dark') {
     document.documentElement.classList.add('dark')
@@ -140,6 +246,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  eventBus.off('avatar-updated')
   document.removeEventListener('click', handleClickOutside)
 })
 </script>
@@ -267,17 +374,85 @@ onUnmounted(() => {
   position: absolute;
   right: 0;
   top: 100%;
-  width: 250px;
-  background: white;
+  width: 500px;
+  max-height: 300px;
+  background: var(--my-bg-color);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-  border-radius: 6px;
+  border-radius: 8px;
   padding: 10px;
   z-index: 1000;
-  display: none;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 }
+
 .notifications-board__title {
   font-weight: bold;
+  font-size: 16px;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.reminder-columns {
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.reminder-column {
+  flex: 1;
+  overflow-y: auto;
+  max-height: 220px;
+  padding-right: 6px;
+}
+
+.reminder-column h4 {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  text-align: center;
+  color: var(--my-text-color);
+  border-bottom: 1px solid #ccc;
+  padding-bottom: 4px;
+}
+
+.reminder-item {
+  background-color: #f5f7fa;
+  border-radius: 6px;
+  padding: 10px;
+  border-bottom: 1px solid #e4e4e4;
   margin-bottom: 8px;
+  word-break: break-word;
+  transition: background 0.3s;
+}
+
+.reminder-item.unread {
+  background-color: #fff7e6;
+}
+
+.reminder-item.read {
+  background-color: #f0f0f0;
+}
+
+.reminder-content {
+  font-size: 13px;
+  margin-bottom: 6px;
+  color: #333;
+}
+
+.reminder-header {
+  display: flex;
+  justify-content: flex-end;
+  font-size: 12px;
+  color: #999;
+  margin-bottom: 4px;
+}
+
+.empty {
+  font-size: 13px;
+  color: #999;
+  text-align: center;
+  margin-top: 10px;
 }
 
 
@@ -289,19 +464,28 @@ onUnmounted(() => {
 
 
 .profile-header__avatar {
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   background-color: var(--my-button-bg-color);
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  border: 2px solid #4dabf7;
+  box-shadow: 0 0 5px rgba(77, 171, 247, 0.5);
 }
 .profile-header__avatar-letter {
   color: white;
   font-weight: bold;
   font-size: 18px;
+  border: 2px solid #4dabf7;
+  box-shadow: 0 0 5px rgba(77, 171, 247, 0.5);
+}
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 /* 菜单下拉弹窗 */
@@ -364,6 +548,35 @@ onUnmounted(() => {
   .navbar-menu {
     width: 100%;
   }
+}
+
+.user-info-card {
+  text-align: center;
+}
+
+.user-info-card__avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 8px;
+}
+
+.user-info-card__name {
+  font-weight: bold;
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+
+.user-info-card__email {
+  font-size: 14px;
+  color: #666;
+  word-break: break-word;
+}
+
+:deep(.user-popover) {
+  padding: 12px;
+  border-radius: 10px;
 }
 </style>
 

@@ -79,3 +79,87 @@ def add_comment(id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'code': 500, 'msg': '数据库内部错误,请稍后重试'}), 500
+    
+
+
+@comments_bp.route('', methods=['GET'])
+@jwt_required
+def get_userComments():
+    try: 
+        user_id = request.user.get('user_id')
+        if not user_id:
+            return jsonify({'code': 404, 'msg': '错误！请重新登录'}), 404
+        
+        comments = Comment.query.filter_by(user_id=user_id).order_by(Comment.created_time.desc()).all()
+
+        data = []
+        for comment in comments:
+            data.append({
+                'id': comment.id,
+                'book_id': comment.book_id,
+                'bookTitle': comment.book.title,
+                'content': comment.content,
+                'rating': comment.rating,
+                'date': comment.created_time.strftime('%Y-%m-%d %H:%M:%S')
+            })
+
+        return jsonify({'code': 200, 'msg': '获取评论记录成功', 'data': data})
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'code': 500, 'msg': '数据库内部错误,请稍后重试'}), 500
+    
+
+
+@comments_bp.route('/<int:id>', methods=['PUT'])
+@jwt_required
+def update_comment(id):
+    try:        
+        data = request.get_json()
+        if not data:
+            return jsonify({'code': 400, 'msg': '请求数据不能为空'}), 400
+        
+        rating = data.get('rating')
+        content = data.get('content')
+
+        if rating is None or content is None:
+            return jsonify({'code': 400, 'msg': '评分和内容不能为空'}), 400
+
+        comment = Comment.query.filter_by(id=id).first()
+        if not comment:
+            return jsonify({'code': 404, 'msg': '评论不存在'}), 404
+        
+        comment.book.rating = (comment.book.rating * comment.book.rating_counts + rating - comment.rating) / comment.book.rating_counts
+        comment.rating = rating
+        comment.content = content
+
+        db.session.commit()
+        return jsonify({'code': 200, 'msg': '评论修改成功'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'code': 500, 'msg': '数据库内部错误,请稍后重试'}), 500
+    
+
+@comments_bp.route('/<int:id>', methods=['DELETE'])
+@jwt_required
+def delete_comment(id):
+    try:
+        comment = Comment.query.get_or_404(id)
+        if not comment:
+            return jsonify({'code': 404, 'msg': '评论不存在'}), 404
+        
+        if comment.book.rating_counts == 1:
+            comment.book.rating = 0.0
+            comment.book.rating_counts = 0
+        else:
+            comment.book.rating = (comment.book.rating * comment.book.rating_counts - comment.rating) / (comment.book.rating_counts - 1)
+            comment.book.rating_counts -= 1
+            
+        db.session.delete(comment)
+        db.session.commit()
+
+        return jsonify({'code': 200, 'msg': '评论删除成功'})
+    
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'code': 500, 'msg': '数据库内部错误,请稍后重试'}), 500

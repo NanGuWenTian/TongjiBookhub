@@ -30,6 +30,7 @@ import { login} from '../api/auth';
 import { useRouter } from 'vue-router';
 import Vcode from "vue3-puzzle-vcode";
 import { ElMessage } from 'element-plus'
+import { checkOverdueStatus } from '@/api/borrow_records';
 
 const account = ref('');
 const password = ref('');
@@ -64,6 +65,17 @@ const onSuccess = async () => {
     router.push('/admin');
     return;
   }
+
+  const response = await checkOverdueStatus();
+  if (response.code !== 200) {
+    ElMessage.error(response.msg || '检查状态失败');
+    return;
+  }
+
+  if (response.hasOverdue) {
+    ElMessage.warning('您有超时借阅的图书，请及时归还');
+  }
+
   router.push('/index');
 };
 

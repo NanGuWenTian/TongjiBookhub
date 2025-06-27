@@ -16,6 +16,7 @@
     "d3": "^7.9.0",
     "d3-cloud": "^1.2.7",
     "element-plus": "^2.10.2",
+    "mitt": "^3.0.1",
     "vue": "^3.2.13",
     "vue-router": "^4.5.1",
     "vue3-puzzle-vcode": "^1.1.7"

@@ -7,6 +7,36 @@ import re
 
 user_bp = Blueprint('user', __name__, url_prefix='/api/user')
 
+@user_bp.route('/brief', methods=['GET'])
+@jwt_required
+def get_userInfoBrief():
+    try: 
+        user_id = request.user.get('user_id')
+        if not user_id:
+            return jsonify({'code': 404, 'msg': '错误！请重新登录'}), 404
+        
+        user = User.query.filter_by(id=user_id).first()
+        if not user:
+            return jsonify({'code': 404, 'msg': '用户不存在'}), 404
+        
+        user_info = UserInfo.query.filter_by(user_id=user_id).first()
+        if not user_info:
+            return jsonify({'code': 404, 'msg': '用户信息不存在'}), 404  
+        
+        return jsonify({
+            'code': 200,
+            'msg': '获取用户信息成功',
+            'data': {
+                'username': user.username,
+                'email': user.email,
+                'avatar': user_info.avatar
+            }
+        })
+
+    except Exception as e:
+        return jsonify({'code': 500, 'msg': '数据库内部错误,请稍后重试'}), 500
+
+
 @user_bp.route('', methods=['GET'])
 @jwt_required
 def get_userInfo():

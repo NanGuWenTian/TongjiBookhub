@@ -14,10 +14,12 @@
                 </div>
                 </div>
                 <div class="right-section">
-                  <div class="notification-bell">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" class="bi bi-bell" viewBox="0 0 16 16">
-                      <path d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2zM8 1.918l-.797.161A4.002 4.002 0 0 0 4 6c0 .628-.134 2.197-.459 3.742-.16.767-.376 1.566-.663 2.258h10.244c-.287-.692-.502-1.49-.663-2.258C12.134 8.197 12 6.628 12 6a4.002 4.002 0 0 0-3.203-3.92L8 1.918zM14.22 12c.223.447.481.801.78 1H1c.299-.199.557-.553.78-1C2.68 10.2 3 6.88 3 6c0-2.42 1.72-4.44 4.005-4.901a1 1 0 1 1 1.99 0A5.002 5.002 0 0 1 13 6c0 .88.32 4.2 1.22 6z"/>
-                      </svg>
+                  <div class="logout-button" @click="handleLogout" style="cursor: pointer;">
+                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                      <polyline points="16 17 21 12 16 7"></polyline>
+                      <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
                   </div>
                   <a href="#" class="edit-profile-link" @click.prevent="openEditModal">修改个人信息 ></a>
                 </div>
@@ -26,7 +28,7 @@
             <div class="content-card">
                 <div class="recently-viewed-section">
                     <div class="section-header">
-                    <h3>最近看过</h3>
+                    <h3>{{ currentModeTitle }}</h3>
                     <div class="view-toggle-controls">
                         <span class="mode-status">当前模式: {{ currentModeText }}</span>
                         <button @click="toggleViewMode" class="toggle-button">
@@ -36,29 +38,51 @@
                     </div>
 
                     <transition name="view-fade" mode="out-in">
-                    <div v-if="!isDetailedView" class="books-container" key="card-view">
-                        <div v-if="loading" class="loading-placeholder">加载中...</div>
-                        <div v-else class="book-card" v-for="book in books" :key="book.id">
-                        <img :src="book.cover" :alt="book.title" class="book-cover" />
-                        <div class="book-info">
-                            <p class="book-title">{{ book.title }}</p>
-                            </div>
-                        </div>
-                    </div>
+                      <div v-if="!isDetailedView" class="books-container" key="card-view">
+                        <div v-if="loadingrecords" class="loading-placeholder">加载中...</div>
 
-                    <div v-else class="details-list-container" key="list-view">
-                        <div v-if="loading" class="loading-placeholder">加载中...</div>
-                        <div v-else class="detail-item" v-for="book in books" :key="book.id">
-                        <div class="detail-info-group">
-                            <p class="detail-title">{{ book.title }}</p>
-                            <p class="detail-author">作者: {{ book.author }}</p>
-                        </div>
-                        <div class="detail-date-group">
-                            <p>借阅时间: {{ book.borrowDate }}</p>
-                            <p>归还期限: {{ book.returnDate }}</p>
-                        </div>
-                        </div>
-                    </div>
+                        <template v-else>
+                          <div v-if="books.length === 0" class="no-books-message">
+                            我扑在书上就像饥饿的人扑在面包上！你也应该饿了，快去扑到书上吧！
+                          </div>
+                          <div v-else class="book-card" v-for="book in books" :key="book.id">
+                            <img :src="book.cover" :alt="book.title" class="book-cover" />
+                            <div class="book-info">
+                              <p class="book-title">{{ book.title }}</p>
+                            </div>
+                          </div>
+                        </template>
+                      </div>
+
+                      <div v-else class="details-list-container" key="list-view">
+                          <div v-if="loadingrecords" class="loading-placeholder">加载中...</div>
+                          <template v-else>
+                            <div v-if="books.length === 0" class="no-books-message">
+                              您还没有任何借阅记录，快去借书吧！
+                            </div>
+                            <div v-else class="detail-item" v-for="book in books" :key="book.id" :class="statusClass(book.status)">
+                              <div class="detail-info-group">
+                                <p class="detail-title">{{ book.title }}</p>
+                                <p class="detail-author">作者: {{ book.author }}</p>
+                              </div>
+                              
+                              <div class="detail-action-group" v-if="book.status === 'borrowed'">
+                                <el-button type="primary" size="small" plain @click="returnBook(book.bookId)">归还</el-button>
+                              </div>
+
+                              <div class="detail-action-group" v-if="book.status === 'overdued'">
+                                <el-button type="warning" size="small" plain @click="returnBook(book.bookId)">归还</el-button>
+                              </div>
+
+                              <div class="detail-date-group fixed-width">
+                                <p>借阅时间: {{ formatDateTime(book.borrowDate) }}</p>
+                                <p v-if="book.status === 'finished'">归还时间: {{ formatDateTime(book.returnDate) }}</p>
+                                <p v-else>到期时间: {{ formatDateTime(book.dueDate) }}</p>
+                              </div>
+                            </div>
+                          </template>
+                      </div>
+                    
                     </transition>
                 </div>
 
@@ -66,16 +90,25 @@
                     <h3>我的评论</h3>
                     <div class="comments-container">
                     <div v-if="loading" class="loading-placeholder">加载中...</div>
-                    <div v-else class="comment-item" v-for="comment in comments" :key="comment.id">
-                        <p class="comment-content"><strong>评论{{ comment.id }}:</strong> {{ comment.content }}</p>
+                    <div v-else class="comment-item" v-for="(comment, index) in comments" :key="comment.id">
+                        <p class="comment-content"><strong>评论{{ index + 1 }}:</strong> {{ comment.content }}</p>
                         <div class="comment-meta">
-                        <span>—— 评论于《{{ comment.bookTitle }}》</span>
+                          <div class="left-side">
+                            <span>—— 评论于《{{ comment.bookTitle }}》</span>
+                            <el-rate
+                              v-model="comment.rating"
+                              disabled
+                              show-score
+                              text-color="#ff9900"
+                              score-template="{value} 分"
+                            />
+                          </div>
 
-                        <div class="comment-actions">
-                            <span class="comment-date">{{ comment.date }}</span>
-                            <button @click="editComment(comment.id)" class="action-button edit-button">修改</button>
-                            <button @click="deleteComment(comment.id)" class="action-button delete-button">删除</button>
-                        </div>
+                          <div class="comment-actions">
+                              <span class="comment-date">{{ comment.date }}</span>
+                              <button @click="editComment(comment.id)" class="action-button edit-button">修改</button>
+                              <button @click="deleteComment(comment.id)" class="action-button delete-button">删除</button>
+                          </div>
                         </div>
                     </div>
                     </div>
@@ -130,18 +163,47 @@
             <el-button type="primary" @click="submitEditForm">保存</el-button>
           </template>
         </el-drawer>
+
+        <el-dialog v-model="editCommentDialogVisible" title="修改评论" width="500px">
+          <el-form :model="editCommentForm" label-width="40px">
+            <el-form-item label="评分">
+              <el-rate v-model="editCommentForm.rating" allow-half clearable
+              :texts="['不及格', '及格', '中', '良', '优']"
+                show-text
+              />
+            </el-form-item>
+            <el-form-item label="内容">
+              <el-input
+                type="textarea"
+                v-model="editCommentForm.content"
+                :rows="5"
+                maxlength="500"
+                show-word-limit
+              />
+            </el-form-item>
+          </el-form>
+          <template #footer>
+            <el-button @click="editCommentDialogVisible = false">取消</el-button>
+            <el-button type="primary" @click="submitEditedComment">保存</el-button>
+          </template>
+        </el-dialog>
+
     </div>
 </template>
 
 
 <script setup> 
-import { ref, onMounted, computed } from 'vue';
-import { ElMessage } from 'element-plus'
+import { ref, onMounted, computed} from 'vue';
+import { useRouter } from 'vue-router';
+import { ElMessage, ElMessageBox, ElNotification } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { getUserInfo, uploadAvatar, updateUserInfo } from '@/api/user';
+import { getBorrowRecords } from '@/api/borrow_records';
+import { getUserComments, updateComment, cutComment } from '@/api/comments';
 import loadingAvatar from '@/assets/avatar/loading.png'
 import undefinedAvatar from '@/assets/avatar/undefined.png'
 
+const router = useRouter()
 const editModalVisible = ref(false)
 const user = ref({
   email: '加载中...',
@@ -195,19 +257,20 @@ function handleClose(done) {
   done()
 }
 
+import eventBus from '@/utils/eventBus'
 async function submitEditForm() {
-  const valid = await editFormRef.value.validate()
-  if (!valid) {
-    ElMessage.error('请检查输入项')
+  try {
+    await editFormRef.value.validate()
+  } catch (error) {
+    ElNotification.error({message: '请检查输入项', position: 'top-left'})
     return
   }
 
   newAvatarUrl.value = null
   if (newAvatarFile.value) {
     const result = await uploadAvatar(newAvatarFile.value)
-    console.log(result)
     if (result.code !== 200) {
-      ElMessage.error(result.msg || '上传头像失败')
+      ElNotification.error({message: result.msg || '上传头像失败', position: 'top-left'})
     }
     else {
       newAvatarUrl.value= result.url
@@ -223,15 +286,15 @@ async function submitEditForm() {
   })
 
   if (result.code !== 200) {
-    ElMessage.error(result.msg || '修改用户信息失败')
+    ElNotification.error({ message: result.msg || '修改用户信息失败', position: 'top-left' })
   }
   else {
-    ElMessage.success('修改用户信息成功')
+    ElNotification.success({ message: '修改用户信息成功', position: 'top-left' })
     fetchUserProfile();
   }
   editModalVisible.value = false
+  eventBus.emit('updated')
 }
-
 
 // --- API 接口预留 ---
 const fetchUserProfile = async () => {
@@ -277,24 +340,56 @@ const fetchUserProfile = async () => {
 
 const isDetailedView = ref(false);
 const books = ref([]);
-// const loading = ref(true);
-
+const loadingrecords = ref(false);
 const currentModeText = computed(() => isDetailedView.value ? '详细模式' : '默认模式');
+const currentModeTitle = computed(() => isDetailedView.value ? '借阅记录' : '最近看过');
+const statusClass = (status) => {
+  switch(status) {
+    case 'finished':
+      return 'status-finished'
+    case 'overdued':
+      return 'status-overdued'
+    case 'borrowed':
+      return 'status-borrowed'
+    default:
+      return ''
+  }
+}
+
+const formatDateTime = (dateString) => {
+  const date = new Date(dateString)
+  return date.toLocaleString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  })
+};
+
+
+function returnBook (bookId) {
+  ElMessage.success('点击归还书籍以归还！')
+  router.push(`/book/${bookId}`)
+}
 
 const toggleViewMode = () => {
   isDetailedView.value = !isDetailedView.value;
+  localStorage.setItem('viewMode', isDetailedView.value ? 'detailed' : 'simple');
 };
+
+// --- API 接口预留 ---
 const fetchRecentlyViewed = async () => {
-  loading.value = true;
-    books.value = [
-      { id: 1, title: '三体', author: '刘慈欣', cover: '', borrowDate: '2025-06-10', returnDate: '2025-07-10' },
-      { id: 2, title: '人类简史', author: '尤瓦尔·赫拉利', cover: '', borrowDate: '2025-06-08', returnDate: '2025-07-08' },
-      { id: 3, title: '原则', author: '瑞·达利欧', cover: '', borrowDate: '2025-06-05', returnDate: '2025-07-05' },
-      { id: 4, title: '深度工作', author: '卡尔·纽波特', cover: '', borrowDate: '2025-06-01', returnDate: '2025-07-01' },
-      { id: 5, title: '百年孤独', author: '加西亚·马尔克斯', cover: '', borrowDate: '2025-05-28', returnDate: '2025-06-28' },
-      { id: 6, title: '活着', author: '余华', cover: '', borrowDate: '2025-05-25', returnDate: '2025-06-25' },
-    ];
-    loading.value = false;
+    loadingrecords.value = true;
+    const result = await getBorrowRecords();
+    if (result.code !== 200) {
+      ElMessage.error(result.msg || '加载失败');
+      return;
+    }
+    loadingrecords.value = false;
+    books.value = result.data;
 };
 
 const comments = ref([]);
@@ -303,45 +398,107 @@ const loading = ref(true);
 // --- API 接口预留 ---
 const fetchMyComments = async () => {
   loading.value = true;
-
-  comments.value = [
-    { id: 1, content: '这本书的宇宙观设定真是太宏伟了，读起来让人心潮澎湃，强烈推荐！', bookTitle: '三体', date: '2025-06-15' },
-    { id: 2, content: '从一个新的角度审视了人类的发展史，很多观点都非常有启发性。', bookTitle: '人类简史', date: '2025-06-10' },
-    { id: 3, content: '不仅仅是投资原则，更是为人处世的哲学。看完之后对工作和生活都有了新的思考。', bookTitle: '原则', date: '2025-05-28' },
-    { id: 4, content: '在信息爆炸的时代，深度工作的能力显得尤为重要。这本书提供了切实可行的方法。', bookTitle: '深度工作', date: '2025-05-12' },
-    { id: 5, content: '魔幻现实主义的巅峰之作，家族百年的兴衰荣辱让人唏嘘不已。', bookTitle: '百年孤独', date: '2025-04-20' },
-  ];
+  const result = await getUserComments();
+  if (result.code !== 200) {
+    ElMessage.error(result.msg || '加载失败');
+    return;
+  }
+  comments.value = result.data;
   loading.value = false;
-
 };
 
-// 2. 新增：修改评论的函数 (接口预留)
+
+const editCommentDialogVisible = ref(false);
+const editCommentForm = ref({
+  id: null,
+  content: '',
+  rating: 0,
+});
+
 const editComment = (id) => {
-  // 将来这里会调用API，或者弹出一个编辑框
-  console.log(`准备修改ID为 ${id} 的评论。`);
-  const commentToEdit = comments.value.find(c => c.id === id);
-  alert(`正在修改评论：\n"${commentToEdit.content}"`);
+  const comment = comments.value.find(c => c.id === id);
+  if (!comment) return;
+
+  editCommentForm.value = {
+    id: comment.id,
+    content: comment.content,
+    rating: comment.rating
+  };
+  editCommentDialogVisible.value = true;
 };
 
-// 3. 新增：删除评论的函数
-const deleteComment = (id) => {
-  console.log(`准备删除ID为 ${id} 的评论。`);
-  // 实际操作前给用户一个确认提示
-  if (confirm('你确定要删除这条评论吗？')) {
-    // 从前端列表中移除该评论，实现立即刷新
-    comments.value = comments.value.filter(comment => comment.id !== id);
-    // 在实际应用中，这里还需要向后端发送一个删除请求
-    // fetch(`/api/comments/${id}`, { method: 'DELETE' });
-    console.log(`ID为 ${id} 的评论已从界面移除。`);
+const submitEditedComment = async () => {
+  if (editCommentForm.value.rating === 0) {
+    ElNotification.error({ message: '写书不易，至少给个0.5分吧老大！', position: 'top-left' });
+    return
+  }
+  if (editCommentForm.value.content.length === 0) {
+    ElNotification.error({ message: '请输入评论内容！', position: 'top-left' });
+    return
+  }
+
+  const result = await updateComment(editCommentForm.value.id, {
+    content: editCommentForm.value.content,
+    rating: editCommentForm.value.rating
+  });
+
+  if (result.code === 200) {
+    ElNotification.success({ message: '评论已更新', position: 'top-left' });
+    editCommentDialogVisible.value = false;
+    fetchMyComments();
+  } else {
+    ElNotification.error({ message: '更新评论失败', position: 'top-left' });
   }
 };
 
-// onMounted 是一个生命周期钩子，在组件挂载到 DOM 后执行
+const deleteComment = async (id) => {
+  try {
+    await ElMessageBox.confirm('你确定要删除这条评论吗？', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning',
+    });
+
+    const result = await cutComment(id);
+    if (result.code === 200) {
+      ElNotification.success({ message: '删除成功', position: 'top-left' });
+      fetchMyComments();
+    } else {
+      ElNotification.error({ message: result.msg || '删除失败', position: 'top-left' });
+    }
+  } catch {
+    ElMessage.info('取消删除');
+  }
+};
+
 onMounted(() => {
-    fetchUserProfile();
-    fetchRecentlyViewed();
-    fetchMyComments();
+  const saved = localStorage.getItem('viewMode');
+  if (saved === 'detailed') {
+    isDetailedView.value = true;
+  }
+  else {
+    isDetailedView.value = false;
+  }
+  fetchUserProfile();
+  fetchRecentlyViewed();
+  fetchMyComments();
 });
+
+const handleLogout = () => {
+  ElMessageBox.confirm('确定要退出登录吗？', '提示', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning',
+  }).then(() => {
+    localStorage.removeItem('access_token')
+    localStorage.removeItem('refresh_token')
+    localStorage.removeItem('theme')
+    ElMessage.success('已退出登录')
+    router.push('/')
+  }).catch(() => {
+    ElMessage.info('已取消退出')
+  })
+}
 </script>
 
 
@@ -448,14 +605,14 @@ onMounted(() => {
   height: 100%;
 }
 
-.notification-bell {
+.logout-button {
   color: #6c757d;
   cursor: pointer;
   transition: color 0.3s ease;
   margin-bottom: 50px; /* 增加与下方链接的距离 */
 }
 
-.notification-bell:hover {
+.logout-button:hover {
   color: #007bff;
 }
 
@@ -527,15 +684,27 @@ h3 {
 }
 
 /* --- 卡片视图样式 --- */
+.no-books-message {
+  margin: 0 auto;
+  text-align: center;
+  padding: 60px 20px;
+  font-size: 20px;
+  color: #7d29dc;
+}
+
 .books-container {
   display: flex;
   gap: 25px;
   overflow-x: auto;
   padding-bottom: 20px;
+  padding-top: 15px;
+  padding-left: 5px;
+  padding-right: 5px;
 }
 .book-card {
   flex: 0 0 140px;
   background-color: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 15px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
   padding: 15px;
@@ -548,6 +717,7 @@ h3 {
 }
 .book-card:hover {
   transform: translateY(-8px) scale(1.05);
+  border-color: rgba(0, 123, 255, 0.3); 
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
 }
 .book-cover {
@@ -595,17 +765,24 @@ h3 {
   border-left: 5px solid transparent;
   transition: all 0.3s ease;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  flex-shrink: 0;
 }
 .detail-item:hover {
   transform: translateX(5px);
-  border-left-color: #007bff;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.detail-date-group.fixed-width {
+  width: 200px;
+  font-size: 14px;
+  color: #555;
+  margin-right: 20px;
 }
 
 /* 新增的样式规则，确保左对齐 */
 .detail-info-group {
   text-align: left;
+  flex: 1;
+  min-width: 200px;
 }
 
 .detail-item p {
@@ -634,6 +811,39 @@ h3 {
   color: #777;
   padding: 100px 0;
 }
+
+.detail-item {
+  border-left-width: 5px;
+  border-left-style: solid;
+}
+
+.status-finished {
+  background-color: #e8f5e9;
+  border-left-color: #4caf50;
+}
+.status-overdued {
+  background-color: #fdecea;
+  border-left-color: #f44336;
+}
+.status-borrowed {
+  background-color: #e3f2fd;
+  border-left-color: #2196f3;
+}
+
+.status-finished:hover {
+  background-color: #c8e6c9;
+}
+.status-overdued:hover {
+  background-color: #f8d7da;
+}
+.status-borrowed:hover {
+  background-color: #bbdefb;
+}
+
+.detail-action-group {
+  margin-left: auto;
+}
+
 
 /* --- Transition 动画 (无变化) --- */
 .view-fade-enter-active,
@@ -700,21 +910,27 @@ h3 {
   display: flex;
   justify-content: space-between;
   align-items: center; /* 垂直居中 */
+
+  .left-side{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
 }
 
-/* 新增: 操作按钮的容器 */
+
 .comment-actions {
   display: flex;
   align-items: center;
-  gap: 15px; /* 设置元素之间的间距 */
+  gap: 15px; 
 }
 
 .comment-date {
   font-style: italic;
-  color: #95a5a6; /* 让日期颜色稍浅一些 */
+  color: #95a5a6;
 }
 
-/* 新增: 操作按钮的通用样式 */
 .action-button {
   background-color: transparent;
   border: 1px solid #dcdcdc;
@@ -725,7 +941,6 @@ h3 {
   transition: all 0.2s ease;
 }
 
-/* 新增: 修改按钮的特定样式 */
 .edit-button {
   color: #3498db;
   border-color: #aed6f1;
@@ -736,7 +951,6 @@ h3 {
   border-color: #3498db;
 }
 
-/* 新增: 删除按钮的特定样式 */
 .delete-button {
   color: #e74c3c;
   border-color: #f5b7b1;
