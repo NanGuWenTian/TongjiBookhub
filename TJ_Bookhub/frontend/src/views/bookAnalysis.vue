@@ -132,22 +132,22 @@ const borrowData = reactive({
 
 const topBooks = ref({
   1: [
+    { title: '百年孤独', borrows: 381 },
     { title: '哈姆雷特', borrows: 320 },
-    { title: '百年孤独', borrows: 281 },
     { title: '活着', borrows: 256 },
     { title: '局外人', borrows: 243 },
     { title: '月亮与六便士', borrows: 224 }
   ],
   2: [
+    { title: '康熙的红票', borrows: 195 },
     { title: '大明王朝1566', borrows: 180 },
     { title: '万历十五年', borrows: 155 },
     { title: '明朝那些事儿', borrows: 140 },
     { title: '三国志', borrows: 131 },
-    { title: '史记', borrows: 115 }
   ],
   3: [
-    { title: '时间简史', borrows: 210 },
-    { title: '物种起源', borrows: 185 },
+    { title: '数据结构', borrows: 210 },
+    { title: '计算机系统结构', borrows: 185 },
     { title: '人类简史', borrows: 165 },
     { title: '量子物理', borrows: 142 },
     { title: '宇宙的奥秘', borrows: 128 }
@@ -160,7 +160,7 @@ const topBooks = ref({
     { title: '美的历程', borrows: 132 }
   ],
   5: [
-    { title: '存在与时间', borrows: 185 },
+    { title: '置身事内', borrows: 185 },
     { title: '苏菲的世界', borrows: 165 },
     { title: '理想国', borrows: 152 },
     { title: '查拉图斯特拉', borrows: 138 },
@@ -227,17 +227,19 @@ function getCategoryColor(categoryId) {
 }
 
 const wordCloudData = ref([
-  { text: '三体', value: 120 },
-  { text: '影视鉴赏', value: 110 },
+  { text: '康熙的红票', value: 120 ,url: '/book/5'},
+  { text: '百年孤独', value: 110 ,url: '/book/4'},
   { text: '二战经济学', value: 115 },
   { text: '哈姆雷特', value: 110 },
   { text: '水浒传', value: 95 },
   { text: '新发展常态', value: 110 },
   { text: '当代中国故事', value: 30 },
+  { text: '三体', value: 30 },
   { text: '一带一路战略', value: 50 },
   { text: '认知觉醒', value: 95 },
   { text: '杀死一只知更鸟', value: 90 },
   { text: '也许你该找个人聊聊', value: 93 },
+  { text: '平凡的世界', value: 103 ,url: '/book/3'},
   { text: '过度焦虑', value: 55 },
   { text: '孤独修心课', value: 60 },
   { text: '亲密关系', value: 40 },
@@ -259,10 +261,10 @@ const wordCloudData = ref([
   { text: '活着', value: 40 },
   { text: '红楼梦', value: 25 },
   { text: '小王子', value: 80 },
-  { text: '计算机系统结构', value: 25 },
+  { text: '计算机系统结构', value: 95 ,url:"/book/1" },
   { text: '计算机网络', value: 20 },
   { text: '计算机组成原理', value: 20 },
-  { text: '数据结构', value: 25 },
+  { text: '数据结构', value: 100 ,url:'/book/2'},
   { text: '操作系统', value: 30 },
   { text: '中国梦', value: 40 },
   { text: '三天读懂中国经济', value: 30 },
@@ -276,7 +278,8 @@ const wordCloudData = ref([
   { text: '解忧杂货店', value: 40 },
   { text: '沟通的艺术', value: 50 },
   { text: '麦田里的守望者', value: 65 },
-  { text: '云边有个小卖部', value: 60 }
+  { text: '云边有个小卖部', value: 60 },
+  { text: '置身事内', value: 80 ,url:'/book/6'}
 ]);
 
 // 图表选项

@@ -1,6 +1,6 @@
 <template>
   <div class="event-detail-page">
-  <backgroundCartoon></backgroundCartoon>
+  <!-- <backgroundCartoon></backgroundCartoon> -->
     <!-- 活动信息模块 -->
     <div class="event-info-container">
       <div class="event-info">
@@ -8,18 +8,20 @@
         <div class="info-right">
           <div class="brief-info">
             <h2 class="event-title">{{ event.title }}</h2>
-            <p><strong>开始时间:</strong> {{ formatDateTime(event.start_time) }}</p>
-            <p><strong>结束时间:</strong> {{ formatDateTime(event.end_time) }}</p>
-            <p><strong>地点:</strong> {{ event.location }}</p>
-            <p><strong>简介:</strong> {{ event.brief }}</p>
             <p><strong>主办方:</strong> {{ event.organizer }}</p>
             <p><strong>主题:</strong> {{ event.theme }}</p>
+            <p><strong>简介:</strong> {{ event.brief }}</p>
+            <p><strong>地点:</strong> {{ event.location }}</p>
+            <p><strong>开始时间:</strong> {{ formatDateTime(event.start_time) }}</p>
+            <p><strong>结束时间:</strong> {{ formatDateTime(event.end_time) }}</p>
           </div>
+
+          <!-- 这里的按钮尚未处理 -->
           <div class="operation">
             <button v-if="!hasParticipated && !isPastEvent" @click="participateEvent" class="btn-participate">
               点击参加
             </button>
-            <button v-if="hasParticipated && isPastEvent" @click="openFeedbackModal" class="btn-evaluate">
+            <button v-if="hasParticipated " @click="openFeedbackModal" class="btn-evaluate">
               点击评价
             </button>
           </div>
@@ -31,15 +33,28 @@
     <div class="comments-container">
       <h3 class="section-title">评论信息</h3>
       <div class="comment-list-wrapper">
-        <div class="comment-list" v-if="comments.length > 0">
-          <div class="comment-item" v-for="comment in comments" :key="comment.id">
-            <div class="comment-content">{{ comment.feedback }}</div>
-            <div class="comment-user">{{ comment.username }}</div>
+          <div class="comment-list" v-if="comments.length > 0">
+            <!-- <div class="comment-item" v-for="(comment,index) in comments" :key="index">
+              <div class="comment-content">{{ comment.comment }}</div>
+              <div class="comment-user">{{ comment.username }}</div>
+            </div> -->
+            <div 
+                v-for="(item, idx) in comments" 
+                :key="idx" 
+                class="feedback-item"
+              >
+                <div class="user-avatar">
+                  <span>{{ item.username.charAt(0) }}</span>
+                </div>
+                <div class="feedback-content">
+                  <strong>{{ item.username }}：</strong>
+                  <p>"{{ item.comment }}"</p>
+                </div>
+              </div>
           </div>
-        </div>
-        <div class="no-comments" v-else>
-          暂无评论
-        </div>
+          <div class="no-comments" v-else>
+            暂无评论
+          </div>
       </div>
     </div>
 
@@ -59,8 +74,10 @@
     <!-- 评论模态框 -->
     <div class="feedback-modal" v-if="isModalOpen">
       <div class="modal-content">
-        <span class="close-btn" @click="closeFeedbackModal">&times;</span>
-        <h2>{{ modalTitle }}</h2>
+        <div class="modal-header">
+          <h2>{{ modalTitle }}</h2>
+          <span class="close-btn" @click="closeFeedbackModal">&times;</span>
+        </div>
         <textarea v-model="feedbackText" rows="5" placeholder="请输入您的评价..."></textarea>
         <button @click="submitFeedback" class="btn-submit">提交</button>
       </div>
@@ -70,18 +87,22 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import backgroundCartoon from '@/components/backgroundCartoon.vue'
-// import axios from 'axios'
-// import { useRoute } from 'vue-router'
-
+import {useRoute,useRouter} from 'vue-router'
+import axios from 'axios';
+// 解决组件复用
+import { watch } from 'vue';
 // 获取路由参数
-// const route = useRoute()
-// const eventId = ref(route.params.id)
+const route = useRoute()
+const router = useRouter()
 
-// 状态管理
+const eventId = ref(route.params.id)
+
+// 页面数据
 const event = ref({})
 const comments = ref([])
 const relatedEvents = ref([])
+
+// 状态管理
 const hasParticipated = ref(false)
 const isModalOpen = ref(false)
 const modalTitle = ref('评价活动')
@@ -93,142 +114,89 @@ const isPastEvent = computed(() => {
   return new Date(event.value.end_time) < new Date()
 })
 
-// 生命周期钩子
-onMounted(() => {
-  // loadEventDetails()
-  // loadEventComments()
-  // checkUserParticipation()
-  // loadRelatedEvents()
-
-  // 捏造活动详情假数据
-  event.value = {
-    id: 1,
-    title: '示例活动标题',
-    start_time: '2024-01-01 10:00:00',
-    end_time: '2024-01-01 12:00:00',
-    location: '示例地点',
-    brief: '这是一个示例活动的简介',
-    organizer: '示例主办方',
-    theme: '示例主题',
-    image: 'https://picsum.photos/400/300',
-    type_id: 1
-  }
-
-  // 捏造活动评论假数据
-  comments.value = [
-    {
-      id: 1,
-      feedback: '这是一条示例评论',
-      username: '示例用户'
-    }
-  ]
-
-  // 捏造用户参与状态假数据
-  hasParticipated.value = false
-
-  // 捏造相关活动假数据
-  relatedEvents.value = [
-    {
-      id: 2,
-      title: '相关活动1',
-      start_time: '2024-01-02 10:00:00',
-      image: 'https://picsum.photos/200/150'
-    },
-    {
-      id: 3,
-      title: '相关活动2',
-      start_time: '2024-01-03 10:00:00',
-      image: 'https://picsum.photos/200/150'
-    }
-  ]
-})
-
 // 获取活动详情
-// const loadEventDetails = async () => {
-//   try {
-//     const response = await axios.get('/api/events', {
-//       params: {
-//         id: eventId.value
-//       }
-//     });
-//     event.value = response.data.event_items
-//     console.log('获取活动详情开始,当前活动编号为', eventId.value)
-//     console.log('获取活动详情成功,信息如下')
-//     console.log(event.value)
-//   } catch (error) {
-//     console.error('获取活动详情失败:', error)
-//     handleApiError(error, '活动详情')
-//   }
-// }
+const loadEventDetails = async () => {
+  try {
+    const response = await axios.get('/api/events', {
+      params: {
+        id: eventId.value
+      }
+    });
+    event.value = response.data.event_items[0]
+    console.log('获取活动详情开始,当前活动编号为', eventId.value)
+    console.log('获取活动详情成功,信息如下')
+    console.log(event.value)
+  } catch (error) {
+    console.error('获取活动详情失败:', error)
+  }
+}
 
 // 获取活动评论
-// const loadEventComments = async () => {
-//   try {
-//     const response = await axios.get(`/api/event_participation_feedback/get_feedback_by_event?event_id=${eventId.value}`)
-//     comments.value = response.data.data
-//     console.log('获取活动评论成功,信息如下')
-//     console.log(comments.value)
-//   } catch (error) {
-//     console.error('获取活动评论失败:', error)
-//     handleApiError(error, '活动评论')
-//   }
-// }
+const loadEventComments = async () => {
+  try {
+    const response = await axios.get(`/api/event_participation_record/get_feedback_by_event`,{
+      params: {
+        event_id: eventId.value
+      }
+    })
+    comments.value = response.data.data
+    console.log('获取活动评论成功,信息如下')
+    console.log(comments.value)
+  } catch (error) {
+    console.error('获取活动评论失败:', error)
+  }
+}
 
 // 检查用户参与状态
-// const checkUserParticipation = async () => {
-//   try {
-//     // const userResponse = await axios.get('/api/current_user')
-//     // const userId = userResponse.data.id
-//     const userId = 1 // 后期合并再改
+const checkUserParticipation = async () => {
+  try {
+    // const userResponse = await axios.get('/api/current_user')
+    // const userId = userResponse.data.id
+    const userId = 1 // 后期合并再改
 
-//     if (userId) {
-//       const response = await axios.get(
-//         `/api/event_participation_records/get_one_person_one_event_record?event_id=${eventId.value}&user_id=${userId}`
-//       )
-//       hasParticipated.value = response.data.state == "success"
+    if (userId) {
+      const response = await axios.get(`/api/event_participation_record/get_one_person_one_event_record`,{
+        params: {
+          user_id: userId,
+          event_id: eventId.value
+        }
+      })
+      hasParticipated.value = response.data.state == "success"
+      console.log("获取用户参与状态成功，用户参与状态数据为");
+      console.log(hasParticipated.value)
 
-//       // 如果用户已参与且有反馈，加载反馈内容
-//       if (hasParticipated.value && response.data.feedback) {
-//         feedbackText.value = response.data.feedback
-//       }
-//     }
-//     console.log('用户是否已参与活动:', hasParticipated.value)
-//   } catch (error) {
-//     console.error('检查用户参与状态失败:', error)
-//     handleApiError(error, '用户参与状态')
-//   }
-// }
+      // 如果用户已参与且有反馈，加载反馈内容
+      if (hasParticipated.value && response.data.feedback) {
+        feedbackText.value = response.data.feedback
+        console.log("获取当前用户反馈成功，反馈内容为")
+        console.log(feedbackText.value)
+      }
+    }
+    console.log('用户是否已参与活动:', hasParticipated.value)
+  } catch (error) {
+    console.error('检查用户参与状态失败:', error)
+  }
+}
 
 // 获取相关活动
-// const loadRelatedEvents = async () => {
-//   try {
-//     // 确保活动详情已加载完成
-//     if (!event.value || !event.value.type_id) {
-//       console.log('活动详情未加载完成，无法获取相关活动')
-//       return
-//     }
-
-//     const response = await axios.get(`/api/events?type_id=${event.value.type_id}`)
-//     relatedEvents.value = response.data
-//     console.log('获取相关活动成功,信息如下')
-//     console.log(relatedEvents.value)
-//   } catch (error) {
-//     console.error('获取相关活动失败:', error)
-//     handleApiError(error, '相关活动')
-//   }
-// }
-
-// 统一处理API错误
-// const handleApiError = (error, dataType) => {
-//   let message = `加载${dataType}失败`
-//   if (error.response) {
-//     message += `: ${error.response.status} ${error.response.statusText}`
-//   }
-//   alert(message + '，请重试')
-// }
+const loadRelatedEvents = async () => {
+  try{
+    const response = await axios.get('/api/events/get_related_events', {
+      params: {
+        event_id: eventId.value
+      }
+    });
+    relatedEvents.value = response.data.related_events;
+    console.log("相关活动已加载完毕，信息如下");
+    console.log(relatedEvents.value);
+  }catch(error) {
+    console.error('获取相关活动失败:', error)
+  }
+}
 
 // 方法：格式化日期时间
 const formatDateTime = (dateTime) => {
+  console.log(dateTime)
   if (!dateTime) return ''
   return new Date(dateTime).toLocaleString()
 }
@@ -241,11 +209,14 @@ const formatDate = (dateTime) => {
 
 // 方法：参加活动
 const participateEvent = async () => {
+  console.log("当前活动是否已过期", isPastEvent.value)
+  console.log("当前新增请求为：", eventId.value)
   try {
-    // await axios.post('/api/event_participation_records', {
-    //   event_id: eventId.value,
-    //   user_id: 1 // 实际应用中应从会话中获取用户ID
-    // })
+    // 修改1：将params改为data，正确传递请求体
+    await axios.post('/api/event_participation_record', {
+      user_id: 1, // 实际应用中应从会话中获取用户ID
+      event_id: eventId.value
+    })
     hasParticipated.value = true
     alert('参加活动成功！')
   } catch (error) {
@@ -256,6 +227,9 @@ const participateEvent = async () => {
 
 // 方法：打开反馈模态框
 const openFeedbackModal = () => {
+  
+  console.log("当前活动是否已过期",isPastEvent.value)
+
   modalTitle.value = hasParticipated.value && feedbackText.value ? '修改评论' : '添加评论'
   isModalOpen.value = true
 }
@@ -266,6 +240,9 @@ const closeFeedbackModal = () => {
 }
 
 // 方法：提交反馈
+// const submitFeedback = ()=>{
+//   console.log('提交反馈')
+// }
 const submitFeedback = async () => {
   if (!feedbackText.value.trim()) {
     alert('评论内容不能为空')
@@ -273,7 +250,7 @@ const submitFeedback = async () => {
   }
 
   try {
-    // 检查是更新还是创建评论
+    // // 检查是更新还是创建评论
     // if (hasParticipated.value && feedbackText.value) {
     //   // 更新现有评论
     //   const participationRecords = await axios.get(
@@ -296,8 +273,14 @@ const submitFeedback = async () => {
     // }
 
     // 更新评论列表
-    // const commentsResponse = await axios.get(`/api/event_participation_feedback/get_feedback_by_event?event_id=${eventId.value}`)
-    // comments.value = commentsResponse.data.data
+    
+    const response = await axios.put('/api/event_participation_record/add_or_modify_feedback', {
+      user_id: 1, // 实际应用中应从会话中获取用户ID
+      event_id: eventId.value,
+      feedback: feedbackText.value
+    });
+    console.log("评论信息已插入成功！，返回为",response)
+    loadEventComments()
 
     hasParticipated.value = true
     isModalOpen.value = false
@@ -309,9 +292,26 @@ const submitFeedback = async () => {
 }
 
 // 方法：导航到其他活动
-const navigateToEvent = (id) => {
-  window.location.href = `/event/detail?id=${id}`
+const navigateToEvent = (id)=>{
+  router.push({ name: 'eventDetail', params: { id } })
 }
+
+watch(() => route.params.id, (newId) => {
+  eventId.value = newId
+  loadEventDetails()
+  loadEventComments()
+  loadRelatedEvents()
+  checkUserParticipation()
+});
+
+// 生命周期钩子
+onMounted(() => {
+  console.log('活动详情页面加载开始,当前活动编号为', eventId.value)
+  loadEventDetails()
+  loadEventComments()
+  loadRelatedEvents()
+  checkUserParticipation()
+})
 </script>
 
 <style lang="scss" scoped>
@@ -387,27 +387,60 @@ const navigateToEvent = (id) => {
     }
 
     .comment-list-wrapper {
-      height: 800px;
+      // height: px;
       overflow-y: auto;
       border: 1px solid #eee;
       border-radius: 4px;
       padding: 10px;
 
-      .comment-item {
-        display: flex;
-        justify-content: space-between;
-        padding: 10px;
-        border-bottom: 1px solid #eee;
+      .comment-list{
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1rem;
+          .feedback-item {
+          display: flex;
+          gap: 0.8rem;
+          padding: 0.8rem;
+          background-color: rgba(255, 255, 255, 0.8);
+          border-radius: 8px;
+          box-shadow: 0 2px 6px rgba(74, 137, 220, 0.1);
+          transition: all 0.3s ease;
+          
+          &:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 10px rgba(74, 137, 220, 0.15);
+          }
+          .user-avatar {
+            flex-shrink: 0;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background-color: #4a89dc;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.95rem;
+          }
 
-        .comment-content {
-          flex: 1;
-          margin-right: 20px;
-        }
-
-        .comment-user {
-          min-width: 100px;
-          text-align: right;
-          color: #666;
+          .feedback-content {
+            flex: 1;
+            
+            strong {
+              color: #3b7dd8;
+              font-weight: 500;
+              font-size: 0.95rem;
+            }
+            
+            p {
+              margin: 0.3rem 0 0;
+              font-style: italic;
+              color: #5d6d7e;
+              font-size: 0.9rem;
+              line-height: 1.4;
+            }
+          }
         }
       }
 
@@ -498,19 +531,35 @@ const navigateToEvent = (id) => {
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
       width: 90%;
       max-width: 500px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
 
-      .close-btn {
-        float: right;
-        font-size: 24px;
-        cursor: pointer;
-      }
+      .modal-header {
+        display: flex;
+        justify-content: center; // 让子元素水平居中
+        align-items: center; // 让子元素垂直居中
+        width: 100%;
+        position: relative;
+        margin-bottom: 15px;
 
-      h2 {
-        margin-top: 0;
+        h2 {
+          font-size: large;
+          margin: 0; // 去除默认的外边距
+        }
+
+        .close-btn {
+          position: absolute; // 使用绝对定位
+          right: 10px; // 距离右侧 10px
+          top: 50%; // 垂直居中
+          transform: translateY(-50%); // 微调垂直位置
+          font-size: 24px;
+          cursor: pointer;
+        }
       }
 
       textarea {
-        width: 100%;
+        width: 90%;
         padding: 10px;
         margin-bottom: 15px;
         border: 1px solid #ddd;

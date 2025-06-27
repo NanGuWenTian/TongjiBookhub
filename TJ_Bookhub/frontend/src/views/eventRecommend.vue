@@ -127,48 +127,7 @@
   const hotedEvents = ref([]);
 
   const eventCategories = ref([]);
-
-  // 这里仅是一个测试 
-  const pastEvents = ref([{
-    id: 1,
-    title: "Python数据分析工作坊",
-    organizer: "数据科学协会",
-    theme: "技术",
-    date: "2025-05-15",
-    participants: 56,
-    evaluations: [
-      {
-        user: "李明",
-        comment: "内容很实用，老师讲解清晰，收获很大"
-      },
-      {
-        user: "张华",
-        comment: "实践环节安排合理，希望下次增加深度学习内容"
-      }
-    ]
-  },
-  {
-    id: 2,
-    title: "科幻文学沙龙",
-    organizer: "文学爱好者俱乐部",
-    theme: "文化",
-    date: "2025-04-22",
-    participants: 32,
-    evaluations: [
-      {
-        user: "王芳",
-        comment: "讨论氛围热烈，分享的作品很有启发性"
-      },
-      {
-        user: "赵强",
-        comment: "希望能邀请更多知名作家参与"
-      },
-      {
-        user: "陈晨",
-        comment: "场地舒适，活动组织得很成功"
-      }
-    ]
-  }]);
+  const pastEvents = ref([]);
 
   // 搜索和筛选功能
   const searchQuery = ref();
@@ -176,7 +135,7 @@
 
   // 分页相关状态
   const currentPage = ref(1);
-  const perPage = ref(9);
+  const perPage = ref(6);
   const totalPages = ref(1);
 
   const filteredEvents = computed(() => {
@@ -254,6 +213,26 @@
       console.error('获取热门活动失败:', error);
     }
   };
+
+  //获取过去活动
+  const getPastEvents = async() =>{
+    try {
+      const response = await axios.get('/api/event_participation_record/get_past_events',{
+        params:{
+          event_ids: "[1,2]"
+        }
+      });
+      pastEvents.value = response.data;
+
+      // 下面是测试信息
+      console.log('获取过去活动成功,信息如下');
+      console.log(pastEvents.value);
+    }
+    catch(error){
+      console.error('获取过去活动失败:', error);
+    }
+  } 
+
   //实现搜索功能
   const searchEvents = async () => {
       console.log('您已点击了提交了搜索内容');
@@ -297,6 +276,10 @@
     fetchEvents();
     getFeaturedEvents();
     getHotEvents();
+    getPastEvents();
+    console.log("往期活动数据已加载完毕，具体数据如下：");
+    console.log(pastEvents.value);
+
   });
 </script>
   

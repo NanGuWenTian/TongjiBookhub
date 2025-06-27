@@ -14,6 +14,7 @@ import backstage_EventParticipationRecordTable from '../views/backstage_EventPar
 import backstage_UserTable from '../views/backstage_UserTable.vue'
 import backstage_BookTable from '../views/backstage_BookTable.vue'
 import backstage_BookCategoryTable from '../views/backstage_BookCategoryTable.vue'
+import aiContact from '@/views/aiContact.vue'
 
 
 
@@ -51,7 +52,7 @@ const routes = [
   },
   {
     path: '/event/detail/:id',
-    name: 'EventDetail',
+    name: 'eventDetail',
     component: eventDetail
   },
   {
@@ -95,6 +96,11 @@ const routes = [
         component:backstage_BookCategoryTable
       }
     ]
+  },
+  {
+    path:'/ai-contact',
+    name:'aiContact',
+    component:aiContact
   }
 ]
 

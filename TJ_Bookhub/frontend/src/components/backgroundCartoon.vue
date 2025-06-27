@@ -21,7 +21,7 @@ body {
 
 .bg {
   animation:slide 3s ease-in-out infinite alternate;
-  background-image: linear-gradient(-60deg, #8d6e63 50%, #5d4037 50%);
+  background-image: linear-gradient(-60deg, #00e0ff 50%, #fdffab 50%);
   bottom:0;
   left:-50%;
   opacity:.5;

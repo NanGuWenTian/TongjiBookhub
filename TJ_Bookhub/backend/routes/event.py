@@ -172,3 +172,43 @@ def delete_event(id):
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": f"删除活动时出错: {str(e)}"}), 500
+    
+# 根据给出的活动id，返回与之相同种类的活动 
+@event_bp.route('/get_related_events', methods=['GET'])
+def get_related_events():
+    #  获取参数
+    event_id = request.args.get('event_id')
+
+    if not event_id:
+        return jsonify({
+            'code': 400,
+            'message': '缺少参数：event_id'
+        }), 400
+    
+    # 查询指定ID的活动
+    target_event = Event.query.get(event_id)
+    
+    if not target_event:
+        return jsonify({
+            'code': 404,
+            'message': '未找到该活动'
+        }), 404
+    
+    # 获取目标活动的type_id
+    target_type_id = target_event.type_id
+    
+    # 查询同类型的其他活动（排除自身）
+    related_events = Event.query \
+        .filter(Event.type_id == target_type_id, Event.id != event_id) \
+        .order_by(Event.start_time.desc()) \
+        .limit(10) \
+        .all()
+    
+    # 转换为字典列表
+    related_events_list = [event.to_dict() for event in related_events]
+    
+    return jsonify({
+        'code': 200,
+        'message': '获取相关活动成功',
+        'related_events': related_events_list
+    })

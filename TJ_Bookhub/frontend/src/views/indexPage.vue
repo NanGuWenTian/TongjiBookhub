@@ -1,5 +1,6 @@
 <template>
   <div class="library-homepage">
+    <!-- <floatingAI></floatingAI> -->
     <!-- 轮播图部分 -->
     <div class="carousel-section">
       <div class="carousel-container">
@@ -83,6 +84,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
+// import floatingAI from '@/components/floatingAI.vue';
 
 // 轮播图数据
 const carouselSlides = ref([

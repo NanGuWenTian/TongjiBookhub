@@ -24,6 +24,9 @@
 
 <script setup>
 import { toRefs } from 'vue';
+import { useRouter } from 'vue-router';
+const router = useRouter();
+
 
 const props = defineProps({
   event: {
@@ -58,11 +61,12 @@ const formatDateTime = (dateTime) => {
   });
 };
 const handleClick = (id) => {
-  console.log('点击了活动卡片，ID:', id);
-  // 这里可以添加后续的点击处理逻辑
-  // 但不再包含与数据库交互的代码
-  console.log("所对应的活动信息如下：");
-  console.log(event.value);
+  // console.log('点击了活动卡片，ID:', id);
+  // // 这里可以添加后续的点击处理逻辑
+  // // 但不再包含与数据库交互的代码
+  // console.log("所对应的活动信息如下：");
+  // console.log(event.value);
+  router.push(`/event/detail/${id}`)
 };  
 </script>
 
