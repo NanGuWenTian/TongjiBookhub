@@ -45,6 +45,8 @@
 
 <script setup>
   import { ref, onMounted, toRefs} from 'vue';
+  import {useRouter} from 'vue-router';
+  const router = useRouter();
   // 格式化日期时间的函数
   const formatDateTime = (dateTime) => {
     const date = new Date(dateTime);
@@ -82,14 +84,15 @@
     // console.log("您已点击活动卡片");
     // console.log("当前活动卡片id");
     // console.log(event_id);
-    console.log("活动信息为");
-    console.log(events.value);
+    // console.log("活动信息为");
+    // console.log(events.value);
 
-    console.log("活动总数为");
-    console.log(events.value.length);
-    // console.log("之后会跳转到活动详情页面","活动id为",event_id)
-    console.log("您已点击活动卡片-组件内部");
-    console.log("活动id为",event_id)
+    // console.log("活动总数为");
+    // console.log(events.value.length);
+    // // console.log("之后会跳转到活动详情页面","活动id为",event_id)
+    // console.log("您已点击活动卡片-组件内部");
+    // console.log("活动id为",event_id)
+    router.push({ name: 'eventDetail', params: { id: event_id } })
   }
 
   // 这里是活动数组中的下标

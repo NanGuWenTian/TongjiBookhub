@@ -19,6 +19,8 @@
 
 <script setup>
 import { ref } from 'vue';
+import {useRouter} from 'vue-router';
+const router = useRouter();
 
 const props = defineProps({
   items: {
@@ -52,8 +54,8 @@ const handleMouseLeave = () => {
   // 保持效果不恢复
 };
 
-const handleClick = (url) => {
-  window.open(url, '_blank');
+const handleClick = (id) => {
+  router.push(`/event/detail/${id}`)
 };
 </script>
 

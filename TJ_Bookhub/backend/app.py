@@ -54,6 +54,10 @@ def create_app():
 
     from routes.reminders import reminders_bp
     app.register_blueprint(reminders_bp)
+    
+    from routes.ai import ai_bp
+    app.register_blueprint(ai_bp)
+
     return app
 
 

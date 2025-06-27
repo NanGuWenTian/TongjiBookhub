@@ -8,6 +8,8 @@
   import { ref, onMounted, watch } from 'vue';
   import * as d3 from 'd3';
   import cloud from 'd3-cloud';
+  import { useRouter } from 'vue-router';
+  const router = useRouter();
   
   const props = defineProps({
     words: {
@@ -93,7 +95,10 @@
         })
         // 点击跳转
         .on("click", function(event, d) {
-          window.open(d.url, '_blank');
+          console.log("您点击了",d.url)
+          router.push(d.url)
+          
+          // window.open(d.url, '_blank');
         });
     }
   };
