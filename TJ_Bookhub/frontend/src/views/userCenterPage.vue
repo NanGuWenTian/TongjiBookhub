@@ -103,16 +103,12 @@
 
             <el-form-item label="上传头像">
               <el-upload
-                class="avatar-uploader"
-                ref="uploadRef"
-                action="http://127.0.0.1:5000/api/upload"
-                name="file"
-                :show-file-list="false"
-                :auto-upload="true"
-                :on-success="handleAvatarSuccess"
-                :before-upload="beforeAvatarUpload"
-              >
-                <img v-if="editForm.avatar" :src="editForm.avatar" class="avatar-preview" />
+                  class="avatar-uploader"
+                  :show-file-list="false"
+                  :auto-upload="false"
+                  :on-change="handleFileChange"
+                >
+                <img v-if="previewUrl" :src="previewUrl" class="avatar-preview" />
                 <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
               </el-upload>
             </el-form-item>
@@ -140,11 +136,11 @@
 
 <script setup> 
 import { ref, onMounted, computed } from 'vue';
-import { getUserInfo } from '@/api/user';
 import { ElMessage } from 'element-plus'
+import { Plus } from '@element-plus/icons-vue'
+import { getUserInfo, uploadAvatar, updateUserInfo } from '@/api/user';
 import loadingAvatar from '@/assets/avatar/loading.png'
 import undefinedAvatar from '@/assets/avatar/undefined.png'
-import { Plus } from '@element-plus/icons-vue'
 
 const editModalVisible = ref(false)
 const user = ref({
@@ -162,16 +158,14 @@ const editForm = ref({
   signature: ''
 })
 const editFormRef = ref(null)
+const previewUrl = ref('')
+const newAvatarFile = ref(null)
+const newAvatarUrl = ref('')
 
-const handleAvatarSuccess = (response) => {
-  // response.url 应该是服务器返回的图片地址
-  editForm.value.avatar = response.url
-  ElMessage.success('头像上传成功')
-}
-
-const beforeAvatarUpload = (file) => {
-  console.log("beforeAvatarUpload")
-  const isJpgOrPng = file.type === 'image/jpeg' || file.type === 'image/png'
+const handleFileChange = (file) => {
+  previewUrl.value = ''
+  newAvatarFile.value = null
+  const isJpgOrPng = file.raw.type === 'image/jpeg' || file.raw.type === 'image/png'
   const isLt2M = file.size / 1024 / 1024 < 2
 
   if (!isJpgOrPng) {
@@ -180,7 +174,17 @@ const beforeAvatarUpload = (file) => {
   if (!isLt2M) {
     ElMessage.error('头像大小不能超过 2MB!')
   }
-  return isJpgOrPng && isLt2M
+  
+  if (!isJpgOrPng || !isLt2M) {
+    return
+  }
+  
+  newAvatarFile.value = file.raw
+  const reader = new FileReader()
+  reader.readAsDataURL(file.raw)
+  reader.onload = (e) => {
+    previewUrl.value = e.target.result
+  }
 }
 
 function openEditModal() {
@@ -188,36 +192,50 @@ function openEditModal() {
 }
 
 function handleClose(done) {
-  // 可做确认提示等
   done()
 }
 
-function submitEditForm() {
-  editFormRef.value.validate((valid) => {
-    if (!valid) {
-      ElMessage.error('请检查输入项')
-      return
+async function submitEditForm() {
+  const valid = await editFormRef.value.validate()
+  if (!valid) {
+    ElMessage.error('请检查输入项')
+    return
+  }
+
+  newAvatarUrl.value = null
+  if (newAvatarFile.value) {
+    const result = await uploadAvatar(newAvatarFile.value)
+    console.log(result)
+    if (result.code !== 200) {
+      ElMessage.error(result.msg || '上传头像失败')
     }
-    // 这里写接口调用，提交修改后的数据到后端
-    console.log('提交表单:', editForm.value)
+    else {
+      newAvatarUrl.value= result.url
+    }
+  }
 
-    // 假设提交成功，更新用户信息并关闭弹窗
-    user.value.nickname = editForm.value.nickname
-    user.value.email = editForm.value.email
-    user.value.phone = editForm.value.phone
-    user.value.avatarUrl = editForm.value.avatar
-    user.value.signature = editForm.value.signature
-
-    ElMessage.success('修改成功')
-    editModalVisible.value = false
+  const result = await updateUserInfo({
+    nickname: editForm.value.nickname,
+    avatar: newAvatarUrl.value,
+    phone: editForm.value.phone,
+    email: editForm.value.email,
+    bio: editForm.value.signature,
   })
+
+  if (result.code !== 200) {
+    ElMessage.error(result.msg || '修改用户信息失败')
+  }
+  else {
+    ElMessage.success('修改用户信息成功')
+    fetchUserProfile();
+  }
+  editModalVisible.value = false
 }
 
 
 // --- API 接口预留 ---
 const fetchUserProfile = async () => {
   const result  = await getUserInfo();
-  console.log(result);
   if (result.code !== 200) {
     ElMessage.error(result.msg || '加载失败');
     return;
@@ -234,7 +252,7 @@ const fetchUserProfile = async () => {
     user.value.avatarUrl = undefinedAvatar
   }
   else {
-    user.value.avatarUrl = result.data.avatar
+    user.value.avatarUrl = result.data.avatar + '?t=' + Date.now()
   }
 
   if (!result.data.phone) {
@@ -336,7 +354,7 @@ onMounted(() => {
     display: flex;
     justify-content: center;
     align-items: flex-start;
-    padding-top: 40px;
+    padding-top: 20px;
     box-sizing: border-box;
 }
 
@@ -760,6 +778,15 @@ h3 {
       width: 178px;
       height: 178px;
       text-align: center;
+    }
+    .avatar-preview {
+      width: 100%;
+      max-width: 178px;
+      height: auto;
+      max-height: 178px;
+      object-fit: cover;
+      // border-radius: 50%;
+      border: 1px solid #ccc;
     }
   }
 }
